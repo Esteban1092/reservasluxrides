@@ -288,6 +288,81 @@
         .replace(/\s+/g, ' ');
     }
 
+    function normalizarChoferId(valor) {
+      const raw = String(valor || '').trim();
+      if (!raw) return '';
+      return /^\d+$/.test(raw) ? raw.padStart(3, '0') : raw.toUpperCase();
+    }
+
+    function posiblesChoferIds(valor) {
+      const raw = String(valor || '').trim();
+      const ids = [normalizarChoferId(raw), raw];
+      if (/^\d+$/.test(raw)) ids.push(String(Number(raw)));
+      return Array.from(new Set(ids.filter(Boolean)));
+    }
+
+    let listenersViajesChofer = [];
+    let listenersHistorialChofer = [];
+
+    function limpiarListenersChofer(items) {
+      items.forEach(({ ref, callback }) => ref.off('value', callback));
+      items.length = 0;
+    }
+
+    async function migrarChoferId(sourceId, targetId, choferData, removeSource = false) {
+      if (!sourceId || !targetId || sourceId === targetId) return;
+
+      const sourceChoferSnap = await db.ref('choferes/' + sourceId).once('value');
+      const targetChoferSnap = await db.ref('choferes/' + targetId).once('value');
+      if (sourceChoferSnap.exists() || choferData) {
+        await db.ref('choferes/' + targetId).update({
+          ...(sourceChoferSnap.val() || {}),
+          ...(choferData || {}),
+          ...(targetChoferSnap.val() || {}),
+          id_canonico: targetId,
+          id_legado: sourceId
+        });
+      }
+
+      for (const rama of ['viajes', 'historial']) {
+        const sourceSnap = await db.ref(rama + '/' + sourceId).once('value');
+        if (!sourceSnap.exists()) continue;
+        await db.ref(rama + '/' + targetId).update(sourceSnap.val() || {});
+        if (removeSource) {
+          await db.ref(rama + '/' + sourceId).remove();
+        }
+      }
+
+      if (removeSource && sourceChoferSnap.exists()) {
+        await db.ref('choferes/' + sourceId).remove();
+      }
+    }
+
+    async function sincronizarAliasesChofer(valor) {
+      const canonicalId = normalizarChoferId(valor);
+      for (const aliasId of posiblesChoferIds(valor)) {
+        if (!aliasId || aliasId === canonicalId) continue;
+        await migrarChoferId(aliasId, canonicalId, null, true);
+      }
+      return canonicalId;
+    }
+
+    async function resolverChoferId(valor) {
+      const candidatos = posiblesChoferIds(valor);
+      for (const candidato of candidatos) {
+        const snap = await db.ref('choferes/' + candidato).once('value');
+        if (snap.exists()) {
+          const canonicalId = normalizarChoferId(candidato);
+          if (canonicalId !== candidato) {
+            await migrarChoferId(candidato, canonicalId, snap.val() || {});
+          }
+          const canonicalSnap = await db.ref('choferes/' + canonicalId).once('value');
+          return { id: canonicalId, data: canonicalSnap.val() || snap.val() || {} };
+        }
+      }
+      return null;
+    }
+
     async function validarIngreso() {
       const guard = getGuard();
       if (guard.lockUntil > Date.now()) {
@@ -304,8 +379,8 @@
       }
 
       try {
-        const choferSnap = await db.ref('choferes/' + choferID).once('value');
-        if (!choferSnap.exists()) {
+        const choferResuelto = await resolverChoferId(choferID);
+        if (!choferResuelto) {
           const updated = getGuard();
           updated.attempts = (updated.attempts || 0) + 1;
           if (updated.attempts >= MAX_LOGIN_ATTEMPTS) {
@@ -320,7 +395,9 @@
           return;
         }
 
-        const ch = choferSnap.val() || {};
+        choferID = await sincronizarAliasesChofer(choferResuelto.id);
+        const chSnap = await db.ref('choferes/' + choferID).once('value');
+        const ch = chSnap.val() || choferResuelto.data || {};
         const nombreAsignado = (ch.nombre || '').trim();
         if (!nombreAsignado) {
           showError('Este ID no tiene nombre asignado. Contacta al despacho.');
@@ -504,9 +581,22 @@
     }
 
     function escucharViajes() {
-      db.ref('viajes/' + choferID).on('value', snap => {
-        const data = snap.val() || {};
-        renderizarViajes(data);
+      limpiarListenersChofer(listenersViajesChofer);
+
+      posiblesChoferIds(choferID).forEach(aliasId => {
+        const ref = db.ref('viajes/' + aliasId);
+        const callback = async snap => {
+          if (aliasId !== choferID && snap.exists()) {
+            await migrarChoferId(aliasId, choferID, null, true);
+            return;
+          }
+          if (aliasId === choferID) {
+            renderizarViajes(snap.val() || {});
+          }
+        };
+
+        ref.on('value', callback);
+        listenersViajesChofer.push({ ref, callback });
       });
     }
 
@@ -723,7 +813,17 @@
     }
 
     function cargarHistorial() {
-      db.ref('historial/' + choferID).on('value', snap => {
+      limpiarListenersChofer(listenersHistorialChofer);
+
+      posiblesChoferIds(choferID).forEach(aliasId => {
+        const ref = db.ref('historial/' + aliasId);
+        const callback = async snap => {
+          if (aliasId !== choferID && snap.exists()) {
+            await migrarChoferId(aliasId, choferID, null, true);
+            return;
+          }
+          if (aliasId !== choferID) return;
+
         const lista = document.getElementById('lista-historial');
         lista.innerHTML = '';
 
@@ -760,6 +860,10 @@
         document.getElementById('stat-viajes').innerText = total;
         document.getElementById('stat-viajes-completados').innerText = completos;
         document.getElementById('stat-cancelados').innerText = cancelados;
+        };
+
+        ref.on('value', callback);
+        listenersHistorialChofer.push({ ref, callback });
       });
     }
 
