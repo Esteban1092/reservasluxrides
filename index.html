@@ -67,6 +67,7 @@ select{padding-left:12px;padding-right:12px;}
 .btn-toggle.active{background:rgba(212,175,55,0.15);border-color:var(--gold);color:var(--gold);}
 .btn-toggle:hover:not(.active){background:rgba(255,255,255,0.05);}
 .hours-box{background:rgba(255,255,255,0.02);padding:12px;border:1px dashed var(--border);margin-bottom:12px;}
+.service-note{margin-top:8px;padding:10px 12px;background:rgba(212,175,55,0.10);border:1px solid rgba(212,175,55,0.45);color:#7a5d10;font-size:0.82rem;line-height:1.4;border-radius:8px;}
 .hours-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px;}
 .btn-hour{padding:10px 4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;transition:all .2s;}
 .btn-hour.active{background:var(--gold);border-color:var(--gold);color:#050505;font-weight:600;}
@@ -239,6 +240,7 @@ select{padding-left:12px;padding-right:12px;}
     <div class="hours-box" id="hours-box" style="display:none;">
       <label class="lbl">Horas de Servicio (Mínimo 2h)</label>
       <div class="hours-grid" id="hours-grid"></div>
+      <div class="service-note">Nota: el servicio por tiempo solo se tomará para rutas dentro de Ciudad de México y Estado de México.</div>
     </div>
 
     <div class="field" id="field-origen">
@@ -411,7 +413,7 @@ const LIVE_REFRESH_MS = 30000;
 let fallbackSearchReady = false;
 const fallbackDebounceTimers = {};
 let googleMapsBloqueado = false;
-let modoBusqueda = 'FALLBACK';
+let modoBusqueda = 'AUTO';
 const MIN_FALLBACK_CHARS = 2;
 const fallbackSuggestionState = {};
 const RESERVA_ACTIVA_KEY = 'luxrides_reserva_activa_id';
@@ -791,23 +793,30 @@ function initGoogleAutocompleteBindings(){
   const destinoInput = document.getElementById("inp-destino");
   if (!origenInput || !destinoInput) return false;
 
+  const autocompleteOptions = {
+    componentRestrictions: { country: 'mx' },
+    fields: ['formatted_address', 'geometry', 'name']
+  };
+
   if (!origenInput.dataset.googleBound) {
-    const autocompleteOrigen = new google.maps.places.Autocomplete(origenInput);
+    const autocompleteOrigen = new google.maps.places.Autocomplete(origenInput, autocompleteOptions);
+    if (map) autocompleteOrigen.bindTo('bounds', map);
     autocompleteOrigen.addListener('place_changed', () => {
       const place = autocompleteOrigen.getPlace();
       if (place.geometry) {
-        setOrigenCoord(place.geometry.location.lat(), place.geometry.location.lng(), place.formatted_address || origenInput.value);
+        setOrigenCoord(place.geometry.location.lat(), place.geometry.location.lng(), place.formatted_address || place.name || origenInput.value);
       }
     });
     origenInput.dataset.googleBound = '1';
   }
 
   if (!destinoInput.dataset.googleBound) {
-    const autocompleteDestino = new google.maps.places.Autocomplete(destinoInput);
+    const autocompleteDestino = new google.maps.places.Autocomplete(destinoInput, autocompleteOptions);
+    if (map) autocompleteDestino.bindTo('bounds', map);
     autocompleteDestino.addListener('place_changed', () => {
       const place = autocompleteDestino.getPlace();
       if (place.geometry) {
-        setDestinoCoord(place.geometry.location.lat(), place.geometry.location.lng(), place.formatted_address || destinoInput.value);
+        setDestinoCoord(place.geometry.location.lat(), place.geometry.location.lng(), place.formatted_address || place.name || destinoInput.value);
       }
     });
     destinoInput.dataset.googleBound = '1';
@@ -823,7 +832,6 @@ async function setModoBusqueda(mode, silent){
     reemplazarInputParaFallback('inp-origen');
     reemplazarInputParaFallback('inp-destino');
     activarBusquedaFallback();
-    googleMapsBloqueado = true;
     updateMapsStatus('warn', 'Mapas: fallback manual');
     return;
   }
@@ -1192,15 +1200,27 @@ function usarUbicacion() {
     let display = `Ubicación actual (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
 
     try {
-      const response = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=es`);
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        const feature = data.features[0];
-        const props = feature.properties || {};
-        let addr = props.name || props.street || '';
-        if (props.city && props.city !== addr) addr += (addr ? ', ' : '') + props.city;
-        if (props.state && !addr.includes(props.state)) addr += (addr ? ', ' : '') + props.state;
-        if (addr.trim()) display = addr;
+      if (window.google && google.maps && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        const response = await geocoder.geocode({
+          location: { lat, lng },
+          region: 'mx'
+        });
+        const result = response?.results?.[0];
+        if (result?.formatted_address) {
+          display = result.formatted_address;
+        }
+      } else {
+        const response = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=es`);
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          const feature = data.features[0];
+          const props = feature.properties || {};
+          let addr = props.name || props.street || '';
+          if (props.city && props.city !== addr) addr += (addr ? ', ' : '') + props.city;
+          if (props.state && !addr.includes(props.state)) addr += (addr ? ', ' : '') + props.state;
+          if (addr.trim()) display = addr;
+        }
       }
     } catch (e) {
       console.warn('Reverse geocoding falló, se usa lat/lng:', e);
@@ -1246,7 +1266,11 @@ function agregarParada() {
   container.appendChild(field);
   const input = field.querySelector("input");
   if (window.google && google.maps && google.maps.places && google.maps.places.Autocomplete) {
-    const autocomplete = new google.maps.places.Autocomplete(input);
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'mx' },
+      fields: ['formatted_address', 'geometry', 'name']
+    });
+    if (map) autocomplete.bindTo('bounds', map);
     autocompletesStops.push(autocomplete);
   }
 }
@@ -1990,8 +2014,6 @@ setTimeout(() => {
     activarModoSinGoogle();
   }
 }, 3500);
-
-setModoBusqueda('FALLBACK', true);
 </script>
 </body>
 </html>
