@@ -131,7 +131,21 @@ select{padding-left:12px;padding-right:12px;}
 .btn-track-mini{border:1px solid var(--gold);background:rgba(212,175,55,0.14);color:#7a5d10;border-radius:999px;padding:5px 10px;font-size:0.74rem;cursor:pointer;font-weight:600;}
 .driver-chip{margin-top:8px;padding:8px 10px;border:1px solid rgba(212,175,55,0.5);background:rgba(255,255,255,0.6);border-radius:8px;color:#5c4508;display:none;}
 .driver-chip b{color:#3f2f03;}
-.sugg-box{display:none !important;}
+.sugg-box{
+  display:none;
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 4px);
+  max-height:220px;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  background:#ffffff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,0.14);
+  z-index:2600;
+}
 .sugg-item{padding:10px 12px;font-size:0.86rem;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.06);}
 .sugg-item:last-child{border-bottom:none;}
 .sugg-item:hover,.sugg-item.active{background:rgba(212,175,55,0.16);}
@@ -398,6 +412,7 @@ let fallbackSearchReady = false;
 const fallbackDebounceTimers = {};
 let googleMapsBloqueado = false;
 let modoBusqueda = 'FALLBACK';
+const MIN_FALLBACK_CHARS = 2;
 const fallbackSuggestionState = {};
 const RESERVA_ACTIVA_KEY = 'luxrides_reserva_activa_id';
 let reservaActivaId = null;
@@ -946,6 +961,14 @@ function setupPhotonAutocomplete(inputId, tipo){
         e.preventDefault();
         selectItem(item);
       });
+      row.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        selectItem(item);
+      }, { passive: false });
+      row.addEventListener('click', (e) => {
+        e.preventDefault();
+        selectItem(item);
+      });
       row.addEventListener('mouseenter', () => {
         fallbackSuggestionState[inputId].activeIndex = idx;
         box.querySelectorAll('.sugg-item').forEach((el, i) => el.classList.toggle('active', i === idx));
@@ -959,7 +982,7 @@ function setupPhotonAutocomplete(inputId, tipo){
     const q = input.value.trim();
     applyLocalPlaceIfExact(q, tipo);
     clearTimeout(fallbackDebounceTimers[inputId]);
-    if (q.length < 3) {
+    if (q.length < MIN_FALLBACK_CHARS) {
       hideBox();
       return;
     }
@@ -984,7 +1007,7 @@ function setupPhotonAutocomplete(inputId, tipo){
 
   input.addEventListener('focus', () => {
     const q = input.value.trim();
-    if (q.length >= 3) {
+    if (q.length >= MIN_FALLBACK_CHARS) {
       input.dispatchEvent(new Event('input'));
     }
   });
@@ -1548,8 +1571,9 @@ async function guardarReserva(){
 
 async function enviarWhatsApp(){
   if(!resultado) return;
-  // Abrir ventana inmediatamente por gesto del usuario para evitar bloqueos del navegador.
-  const waWindow = window.open('about:blank','_blank');
+  const esMovil = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+  // En desktop abrimos una ventana inmediata para evitar bloqueadores tras awaits.
+  const waWindow = esMovil ? null : window.open('about:blank','_blank','noopener,noreferrer');
   const guardadoInfo = await guardarReserva();
   if (guardadoInfo?.ok && guardadoInfo?.reservaId) {
     iniciarSeguimientoCliente(guardadoInfo.reservaId);
@@ -1604,15 +1628,23 @@ async function enviarWhatsApp(){
   ].filter(l=>l!=='').join('\n');
 
   const numeroCentral = normalizarNumeroWhatsApp(WHATSAPP_CENTRAL);
-  const waUrl = `https://wa.me/${numeroCentral}?text=${encodeURIComponent(lines)}`;
+  const encodedText = encodeURIComponent(lines);
+  const waUrl = `https://wa.me/${numeroCentral}?text=${encodedText}`;
+  const waApiUrl = `https://api.whatsapp.com/send?phone=${numeroCentral}&text=${encodedText}`;
+  const waAppUrl = `whatsapp://send?phone=${numeroCentral}&text=${encodedText}`;
 
-  if (waWindow) {
+  if (esMovil) {
+    // Intento 1: abrir app de WhatsApp. Si falla, cae al enlace web.
+    window.location.href = waAppUrl;
+    setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        window.location.href = waApiUrl;
+      }
+    }, 900);
+  } else if (waWindow && !waWindow.closed) {
     waWindow.location.href = waUrl;
-  } else if (/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent)) {
-    // En móvil: deeplink directo abre WhatsApp sin necesidad de popup
-    window.location.href = waUrl;
   } else {
-    window.open(waUrl, '_blank');
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
   }
 }
 
