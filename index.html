@@ -1138,7 +1138,7 @@ function buildHours(){
 function buildPax(){
   document.getElementById('pax-row').innerHTML =
     [1,2,3,4,5,6,7].map(p => `<button class="btn-pax${p===pasajeros?' active':''}" onclick="setPax(${p})">${p}</button>`).join('');
-  document.getElementById('vehicle-hint').textContent = pasajeros<=4 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond';
+  document.getElementById('vehicle-hint').textContent = pasajeros<=3 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond';
 }
 
 function setServicio(val){
@@ -1165,7 +1165,7 @@ function setHours(h){
 function setPax(p){
   pasajeros = p;
   document.querySelectorAll('.btn-pax').forEach(b => b.classList.toggle('active', parseInt(b.textContent)===p));
-  document.getElementById('vehicle-hint').textContent = p<=4 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond';
+  document.getElementById('vehicle-hint').textContent = p<=3 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond';
   refreshRapidoUI();
 }
 
@@ -1369,14 +1369,14 @@ function calcCasetas(distanciaKm){
 function calcTotalPrecio(servicioActual, distanciaKm, casetasTotal){
   let total;
   if (servicioActual === 'I') {
-    const base = pasajeros <= 4 ? 240 : 320;
-    const tarifaKm = pasajeros <= 4 ? 30 : 45;
+    const base = pasajeros <= 3 ? 240 : 320;
+    const tarifaKm = pasajeros <= 3 ? 30 : 45;
     total = base + (Math.max(0, distanciaKm - 4) * tarifaKm);
     return Math.round(total);
   } else {
-    const tarifaHora = pasajeros <= 4 ? 550 : 760;
+    const tarifaHora = pasajeros <= 3 ? 550 : 760;
     total = tarifaHora * hSel + casetasTotal;
-    return Math.round(total * (pasajeros <= 4 ? 1.18 : 1.13));
+    return Math.round(total * (pasajeros <= 3 ? 1.18 : 1.13));
   }
 }
 
@@ -1494,7 +1494,7 @@ async function calcular(){
 
 function renderResults(){
   const {distanciaKm,duracionMin,totalPrecio,casetasTotal}=resultado;
-  const vehiculo=pasajeros<=4?'Sedán VIP Diamond':'SUV Platinum Diamond';
+  const vehiculo=pasajeros<=3?'Sedán VIP Diamond':'SUV Platinum Diamond';
   const esKm=servicio==='I';
   document.getElementById('results').style.display='block';
   document.getElementById('route-box').style.display=esKm?'block':'none';
@@ -1543,7 +1543,7 @@ async function guardarReserva(){
   const reserva = {
     timestamp: new Date().toISOString(),
     cliente: nombre,
-    vehiculo: pasajeros <= 4 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond',
+    vehiculo: pasajeros <= 3 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond',
     origen: coordOrigen.display || 'Sin dirección',
     destino: servicio === 'I' ? (coordDestino?.display || 'N/A') : 'Por tiempo',
     fecha: fecha,
@@ -1606,7 +1606,7 @@ async function enviarWhatsApp(){
   const fecha=document.getElementById('inp-fecha').value;
   const hora=document.getElementById('inp-hora').value;
   const min=document.getElementById('inp-min').value.toString().padStart(2,'0');
-  const vehiculo=pasajeros<=4?'Sedán VIP Diamond':'SUV Platinum Diamond';
+  const vehiculo=pasajeros<=3?'Sedán VIP Diamond':'SUV Platinum Diamond';
   const horaLleg=servicio==='I'?calcHoraLlegada(resultado.duracionMin):'';
   const aerolinea=document.getElementById('inp-aerolinea').value.trim();
   const vuelo=document.getElementById('inp-vuelo').value.trim();
