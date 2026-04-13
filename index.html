@@ -1630,17 +1630,10 @@ async function enviarWhatsApp(){
   const numeroCentral = normalizarNumeroWhatsApp(WHATSAPP_CENTRAL);
   const encodedText = encodeURIComponent(lines);
   const waUrl = `https://wa.me/${numeroCentral}?text=${encodedText}`;
-  const waApiUrl = `https://api.whatsapp.com/send?phone=${numeroCentral}&text=${encodedText}`;
-  const waAppUrl = `whatsapp://send?phone=${numeroCentral}&text=${encodedText}`;
 
   if (esMovil) {
-    // Intento 1: abrir app de WhatsApp. Si falla, cae al enlace web.
-    window.location.href = waAppUrl;
-    setTimeout(() => {
-      if (document.visibilityState === 'visible') {
-        window.location.href = waApiUrl;
-      }
-    }, 900);
+    // En móvil, wa.me abre más rápido y evita bucles de instalación en algunos navegadores.
+    window.location.href = waUrl;
   } else if (waWindow && !waWindow.closed) {
     waWindow.location.href = waUrl;
   } else {
