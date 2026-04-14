@@ -167,8 +167,8 @@
           <p>Viajes hoy</p>
         </div>
         <div class="stat-box">
-          <h4 id="stat-rating">5.0</h4>
-          <p>Calificacion</p>
+          <h4 id="stat-ganancias">$0</h4>
+          <p>Ganancias</p>
         </div>
         <div class="stat-box">
           <h4 id="stat-viajes-completados">0</h4>
@@ -186,6 +186,7 @@
         <p><b>Modelo:</b> <span id="info-vehiculo">Sin modelo</span></p>
         <p><b>Color:</b> <span id="info-color">Sin color</span></p>
         <p><b>Placa:</b> <span id="info-placa">XYZ-001</span></p>
+        <p><b>Calificacion:</b> <span id="info-rating">Sin calificaciones</span></p>
         <p><b>Estado:</b> <span id="info-estado" style="color:#86efac">En linea</span></p>
 
         <div class="inline-field">
@@ -213,6 +214,9 @@
       <p><b>Origen:</b> <span id="panel-origen">-</span></p>
       <p><b>Destino:</b> <span id="panel-destino">-</span></p>
       <p><b>Distancia:</b> <span id="panel-distancia">-</span></p>
+      <p><b>Llegas al cliente en:</b> <span id="panel-eta">Calculando...</span></p>
+      <p><b>Hora estimada:</b> <span id="panel-llegada">-</span></p>
+      <p><b>Precio:</b> <span id="panel-precio">$0 MXN</span></p>
       <button onclick="finalizarViaje()">Finalizar viaje</button>
       <button class="btn-cancelar" onclick="cancelarViaje()">Cancelar</button>
     </div>
@@ -252,6 +256,14 @@
     let viajePendienteNotificado = null;
     let ultimaPosicion = null;
     let ultimoHeading = 0;
+    let notificationPermissionRequested = false;
+    let ringtoneAudio = null;
+    let ringtoneStopTimer = null;
+    let titleAlertInterval = null;
+    let baseDocumentTitle = document.title;
+    let viajeNotification = null;
+    let etaRequestInFlight = false;
+    let etaLastRefreshAt = 0;
 
     function getGuard() {
       try {
@@ -274,6 +286,91 @@
       el.textContent = msg;
       el.style.display = 'block';
       setTimeout(() => { el.style.display = 'none'; }, 3800);
+    }
+
+    async function prepararPermisoNotificaciones() {
+      if (notificationPermissionRequested || !('Notification' in window)) return;
+      notificationPermissionRequested = true;
+
+      if (Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission();
+        } catch (_) {}
+      }
+    }
+
+    function iniciarAlertaTitulo() {
+      if (titleAlertInterval) return;
+      titleAlertInterval = setInterval(() => {
+        document.title = document.title === 'SERVICIO NUEVO - LUXRIDES' ? baseDocumentTitle : 'SERVICIO NUEVO - LUXRIDES';
+      }, 1000);
+    }
+
+    function detenerAlertaTitulo() {
+      if (titleAlertInterval) {
+        clearInterval(titleAlertInterval);
+        titleAlertInterval = null;
+      }
+      document.title = baseDocumentTitle;
+    }
+
+    function detenerNotificacionViaje() {
+      if (ringtoneStopTimer) {
+        clearTimeout(ringtoneStopTimer);
+        ringtoneStopTimer = null;
+      }
+
+      if (ringtoneAudio) {
+        try {
+          ringtoneAudio.pause();
+          ringtoneAudio.currentTime = 0;
+        } catch (_) {}
+      }
+
+      if (viajeNotification) {
+        try { viajeNotification.close(); } catch (_) {}
+        viajeNotification = null;
+      }
+
+      detenerAlertaTitulo();
+    }
+
+    function mostrarNotificacionSistema() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      try {
+        if (viajeNotification) viajeNotification.close();
+        viajeNotification = new Notification('Nuevo servicio LuxRides', {
+          body: 'Tienes un servicio pendiente por aceptar.',
+          tag: 'luxrides-viaje-pendiente',
+          renotify: true,
+          requireInteraction: true,
+          silent: false
+        });
+        viajeNotification.onclick = () => {
+          window.focus();
+          try { viajeNotification.close(); } catch (_) {}
+        };
+      } catch (_) {}
+    }
+
+    function reproducirTonoNuevoViaje() {
+      detenerNotificacionViaje();
+
+      try {
+        ringtoneAudio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+        ringtoneAudio.volume = 1;
+        ringtoneAudio.loop = true;
+        ringtoneAudio.play().catch(() => {});
+        ringtoneStopTimer = setTimeout(() => detenerNotificacionViaje(), 30000);
+      } catch (_) {}
+
+      if (navigator.vibrate) {
+        navigator.vibrate([400, 180, 400, 180, 700]);
+      }
+
+      iniciarAlertaTitulo();
+      mostrarNotificacionSistema();
     }
 
     function lockMinutesLeft(lockUntil) {
@@ -442,6 +539,7 @@
           app: 'choferes-luxrides-pro'
         });
 
+        await prepararPermisoNotificaciones();
         cargarDatosGuardados();
         escucharViajes();
         cargarHistorial();
@@ -503,6 +601,7 @@
             updatedAt: new Date().toISOString()
           });
           actualizarMarcadorChofer();
+          actualizarEtaViaje();
         } catch (err) {
           console.warn('No se pudo actualizar ubicacion', err);
         }
@@ -524,6 +623,15 @@
     function cargarDatosGuardados() {
       db.ref('perfiles/' + choferID + '/foto').on('value', snap => {
         if (snap.exists()) document.getElementById('p-img').src = snap.val();
+      });
+
+      db.ref('choferes/' + choferID + '/rating_stats').on('value', snap => {
+        const stats = snap.val() || {};
+        const promedio = Number(stats.promedio || 0);
+        const count = Number(stats.count || 0);
+        document.getElementById('info-rating').innerText = count > 0
+          ? `⭐ ${promedio.toFixed(1)} / 5 (${count} calificaciones)`
+          : 'Sin calificaciones';
       });
     }
 
@@ -618,6 +726,7 @@
 
         const dist = viaje.distancia_km ? (viaje.distancia_km + ' km') : (viaje.distancia || '-');
         const mins = viaje.duracion_min ? (viaje.duracion_min + ' min') : (viaje.tiempo || '-');
+        const precio = formatearMonto(viaje.total || viaje.precio || 0);
 
         const chip = estado === 'pendiente'
           ? '<span class="status-chip pending">Pendiente</span>'
@@ -631,6 +740,7 @@
             <p><b>Origen:</b> ${esc(viaje.origen || '-')}</p>
             <p><b>Destino:</b> ${esc(viaje.destino || '-')}</p>
             <p><b>Distancia:</b> ${esc(dist)} | <b>Tiempo:</b> ${esc(mins)}</p>
+            <p><b>Precio:</b> ${esc(precio)}</p>
             <div class="viaje-botones">
               ${estado === 'pendiente' ? `<button class="btn-aceptar" onclick="aceptarViaje('${key}')">Aceptar</button>` : `<button class="btn-ver" onclick="reanudarViaje('${key}')">Ver mapa</button>`}
               <button class="btn-rechazar" onclick="rechazarViaje('${key}')">Rechazar</button>
@@ -643,23 +753,104 @@
 
       if (visibles === 0) {
         viajePendienteNotificado = null;
+        detenerNotificacionViaje();
       }
     }
 
     function notificarNuevoViaje() {
-      try {
-        const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.mp3');
-        audio.volume = 1;
-        audio.play().catch(() => {});
-      } catch (_) {}
+      reproducirTonoNuevoViaje();
+    }
 
-      if (navigator.vibrate) {
-        navigator.vibrate([250, 120, 250]);
+    function formatearMonto(valor) {
+      return '$' + Number(valor || 0).toLocaleString('es-MX') + ' MXN';
+    }
+
+    function formatearHoraEstimada(fecha) {
+      return fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function obtenerMinutosLeg(leg) {
+      const segundos = Number(leg?.duration_in_traffic?.value || leg?.duration?.value || 0);
+      return Math.max(1, Math.round(segundos / 60));
+    }
+
+    function actualizarPanelEta(info) {
+      document.getElementById('panel-eta').innerText = info ? (info.minutos + ' min') : 'Calculando...';
+      document.getElementById('panel-llegada').innerText = info ? info.hora : '-';
+    }
+
+    function construirEtaDesdeRuta(response) {
+      const legs = response?.routes?.[0]?.legs || [];
+      if (!legs.length) return null;
+
+      const minutos = obtenerMinutosLeg(legs[0]);
+      return {
+        minutos,
+        hora: formatearHoraEstimada(new Date(Date.now() + minutos * 60000))
+      };
+    }
+
+    async function sincronizarEtaReserva(info) {
+      if (!viajeActual?.reserva_id || !info) return;
+      await db.ref('reservas/' + viajeActual.reserva_id).update({
+        eta_chofer_min: info.minutos,
+        eta_chofer_hora: info.hora,
+        eta_actualizado_en: new Date().toISOString()
+      });
+    }
+
+    function procesarRutaActiva(response) {
+      const eta = construirEtaDesdeRuta(response);
+      actualizarPanelEta(eta);
+      if (eta) {
+        Promise.resolve(sincronizarEtaReserva(eta)).catch(err => {
+          console.warn('No se pudo sincronizar ETA con la reserva', err);
+        });
+      }
+    }
+
+    async function actualizarEtaViaje(force = false) {
+      if (!viajeActual || !window.google || !window.google.maps || !directionsService || !ultimaPosicion) return;
+      if (etaRequestInFlight) return;
+
+      const now = Date.now();
+      if (!force && now - etaLastRefreshAt < 15000) return;
+
+      const destinoFinal = viajeActual.destino && viajeActual.destino !== '-' ? viajeActual.destino : viajeActual.origen;
+      if (!destinoFinal || destinoFinal === '-') return;
+
+      etaRequestInFlight = true;
+      etaLastRefreshAt = now;
+
+      try {
+        const waypoints = [];
+        if (viajeActual.origen && viajeActual.origen !== '-' && viajeActual.destino && viajeActual.destino !== '-') {
+          waypoints.push({ location: viajeActual.origen, stopover: true });
+        }
+
+        const response = await new Promise((resolve, reject) => {
+          directionsService.route({
+            origin: { lat: ultimaPosicion.lat, lng: ultimaPosicion.lng },
+            destination: destinoFinal,
+            waypoints,
+            optimizeWaypoints: false,
+            travelMode: 'DRIVING'
+          }, (res, status) => status === 'OK' ? resolve(res) : reject(status));
+        });
+
+        directionsRenderer.setDirections(response);
+        pintarParadasMapa(viajeActual.origen, viajeActual.destino);
+        procesarRutaActiva(response);
+      } catch (err) {
+        console.warn('No se pudo recalcular ETA del viaje', err);
+      } finally {
+        etaRequestInFlight = false;
       }
     }
 
     async function aceptarViaje(viajeKey) {
       try {
+        detenerNotificacionViaje();
         const snap = await db.ref('viajes/' + choferID + '/' + viajeKey).once('value');
         if (!snap.exists()) return;
 
@@ -711,13 +902,17 @@
       document.getElementById('panel-origen').innerText = viaje.origen || '-';
       document.getElementById('panel-destino').innerText = viaje.destino || '-';
       document.getElementById('panel-distancia').innerText = viaje.distancia_km ? (viaje.distancia_km + ' km') : (viaje.distancia || '-');
+      actualizarPanelEta(null);
+      document.getElementById('panel-precio').innerText = formatearMonto(viaje.total || viaje.precio || 0);
 
       initMap(viaje.origen, viaje.destino);
+      actualizarEtaViaje(true);
     }
 
     async function rechazarViaje(viajeKey) {
       if (!confirm('Deseas rechazar este viaje?')) return;
       try {
+        detenerNotificacionViaje();
         const snap = await db.ref('viajes/' + choferID + '/' + viajeKey).once('value');
         if (!snap.exists()) return;
         const v = snap.val() || {};
@@ -762,7 +957,12 @@
         });
 
         if (viajeActual.reserva_id) {
-          await db.ref('reservas/' + viajeActual.reserva_id).update({ estado: 'Completado' });
+          await db.ref('reservas/' + viajeActual.reserva_id).update({
+            estado: 'Completado',
+            eta_chofer_min: null,
+            eta_chofer_hora: null,
+            eta_actualizado_en: new Date().toISOString()
+          });
         }
 
         await db.ref('viajes/' + choferID + '/' + viajeActualKey).remove();
@@ -792,7 +992,12 @@
         });
 
         if (viajeActual.reserva_id) {
-          await db.ref('reservas/' + viajeActual.reserva_id).update({ estado: 'Cancelado' });
+          await db.ref('reservas/' + viajeActual.reserva_id).update({
+            estado: 'Cancelado',
+            eta_chofer_min: null,
+            eta_chofer_hora: null,
+            eta_actualizado_en: new Date().toISOString()
+          });
         }
 
         await db.ref('viajes/' + choferID + '/' + viajeActualKey).remove();
@@ -808,6 +1013,8 @@
     function cerrarPantallaViaje() {
       viajeActual = null;
       viajeActualKey = null;
+      etaLastRefreshAt = 0;
+      actualizarPanelEta(null);
       document.getElementById('viaje-screen').style.display = 'none';
       document.getElementById('main-screen').style.display = 'flex';
     }
@@ -830,6 +1037,7 @@
         let total = 0;
         let completos = 0;
         let cancelados = 0;
+        let ganancias = 0;
 
         const items = [];
         snap.forEach(child => items.push(child.val()));
@@ -838,7 +1046,13 @@
         items.forEach(h => {
           total++;
           const esOk = h.estado === 'completado';
-          if (esOk) completos++; else cancelados++;
+          const precio = Number(h.precio || 0);
+          if (esOk) {
+            completos++;
+            ganancias += precio;
+          } else {
+            cancelados++;
+          }
 
           const estadoClass = esOk ? 'estado-ok' : 'estado-cancelado';
           const estadoTxt = esOk ? 'COMPLETADO' : 'CANCELADO';
@@ -848,6 +1062,7 @@
               <h4>${esc(h.cliente || 'Cliente')}</h4>
               <p>${esc(h.origen || '-')} -> ${esc(h.destino || '-')}</p>
               <p><span class="estado ${estadoClass}">${estadoTxt}</span></p>
+              <p><b>Precio:</b> ${esc(formatearMonto(precio))}</p>
               <p style="color:#777">${esc(h.fecha || '')} | ${esc(h.hora || '')}</p>
             </div>
           `;
@@ -860,6 +1075,7 @@
         document.getElementById('stat-viajes').innerText = total;
         document.getElementById('stat-viajes-completados').innerText = completos;
         document.getElementById('stat-cancelados').innerText = cancelados;
+        document.getElementById('stat-ganancias').innerText = '$' + ganancias.toLocaleString('es-MX');
         };
 
         ref.on('value', callback);
@@ -938,6 +1154,7 @@
         if (status === 'OK') {
           directionsRenderer.setDirections(response);
           pintarParadasMapa(origen, destino);
+            procesarRutaActiva(response);
         }
       });
     }
@@ -1103,6 +1320,7 @@
     async function cerrarSesion() {
       if (!confirm('Deseas cerrar sesion?')) return;
       try {
+        detenerNotificacionViaje();
         if (locationWatchId !== null) {
           navigator.geolocation.clearWatch(locationWatchId);
           locationWatchId = null;
@@ -1125,6 +1343,9 @@
     document.addEventListener('visibilitychange', () => {
       // Sin castigos por segundo plano: el chofer puede usar llamadas u otras apps.
       if (document.hidden) return;
+      if (viajePendienteNotificado) {
+        detenerAlertaTitulo();
+      }
     });
 
     function esc(str) {
