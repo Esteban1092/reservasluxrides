@@ -296,6 +296,7 @@
     let viajeEmergenteActual = null;
     let heartbeatInterval = null;
     let wakeLockSentinel = null;
+    let driverServiceWorkerRegistration = null;
     let etaRequestInFlight = false;
     let etaLastRefreshAt = 0;
 
@@ -331,6 +332,25 @@
           await Notification.requestPermission();
         } catch (_) {}
       }
+    }
+
+    async function registrarServiceWorkerChofer() {
+      if (!('serviceWorker' in navigator)) return null;
+      if (driverServiceWorkerRegistration) return driverServiceWorkerRegistration;
+
+      try {
+        driverServiceWorkerRegistration = await navigator.serviceWorker.register('./luxrides-driver-sw.js');
+        return driverServiceWorkerRegistration;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function construirTextoNotificacion(viaje) {
+      const cliente = viaje?.cliente || 'Cliente';
+      const origen = viaje?.origen || 'Origen pendiente';
+      const destino = viaje?.destino || 'Destino pendiente';
+      return `${cliente} • ${origen} -> ${destino}`;
     }
 
     async function activarWakeLockChofer() {
@@ -430,18 +450,37 @@
       if (alerta) alerta.classList.remove('show');
     }
 
-    function mostrarNotificacionSistema() {
+    async function mostrarNotificacionSistema() {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const viaje = viajeEmergenteActual || {};
+      const opciones = {
+        body: construirTextoNotificacion(viaje),
+        tag: 'luxrides-viaje-pendiente',
+        renotify: true,
+        requireInteraction: true,
+        silent: false,
+        vibrate: [300, 120, 300, 120, 500],
+        icon: 'https://cdn-icons-png.flaticon.com/512/744/744465.png',
+        badge: 'https://cdn-icons-png.flaticon.com/512/744/744465.png',
+        data: {
+          url: window.location.href,
+          choferId: choferID,
+          viajeKey: viajeActualKey || null
+        }
+      };
+
+      try {
+        const registration = await registrarServiceWorkerChofer();
+        if (registration && typeof registration.showNotification === 'function') {
+          await registration.showNotification('Nuevo servicio LuxRides', opciones);
+          return;
+        }
+      } catch (_) {}
 
       try {
         if (viajeNotification) viajeNotification.close();
-        viajeNotification = new Notification('Nuevo servicio LuxRides', {
-          body: 'Tienes un servicio pendiente por aceptar.',
-          tag: 'luxrides-viaje-pendiente',
-          renotify: true,
-          requireInteraction: true,
-          silent: false
-        });
+        viajeNotification = new Notification('Nuevo servicio LuxRides', opciones);
         viajeNotification.onclick = () => {
           window.focus();
           try { viajeNotification.close(); } catch (_) {}
@@ -467,14 +506,14 @@
 
       notificationRepeatInterval = setInterval(() => {
         if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 250]);
-        mostrarNotificacionSistema();
+        mostrarNotificacionSistema().catch(() => {});
         if (ringtoneAudio && ringtoneAudio.paused) {
           ringtoneAudio.play().catch(() => {});
         }
       }, 7000);
 
       iniciarAlertaTitulo();
-      mostrarNotificacionSistema();
+      mostrarNotificacionSistema().catch(() => {});
       mostrarEmergenteViaje(viajeEmergenteActual);
     }
 
@@ -645,6 +684,7 @@
         });
 
         await prepararPermisoNotificaciones();
+        await registrarServiceWorkerChofer();
         await activarWakeLockChofer();
         cargarDatosGuardados();
         escucharViajes();
