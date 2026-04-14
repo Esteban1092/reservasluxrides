@@ -765,6 +765,22 @@
       return '$' + Number(valor || 0).toLocaleString('es-MX') + ' MXN';
     }
 
+    function calcularDistanciaMetros(puntoA, puntoB) {
+      if (!puntoA || !puntoB) return Number.POSITIVE_INFINITY;
+      const toRad = (valor) => valor * Math.PI / 180;
+      const lat1 = Number(puntoA.lat);
+      const lng1 = Number(puntoA.lng);
+      const lat2 = Number(puntoB.lat);
+      const lng2 = Number(puntoB.lng);
+      if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) return Number.POSITIVE_INFINITY;
+
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return 6371000 * c;
+    }
+
     function formatearHoraEstimada(fecha) {
       return fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
     }
@@ -856,11 +872,21 @@
 
         viajeActual = snap.val();
         viajeActualKey = viajeKey;
+        const ubicacionAceptacion = ultimaPosicion
+          ? {
+              lat: Number(ultimaPosicion.lat),
+              lng: Number(ultimaPosicion.lng),
+              timestamp: new Date().toISOString()
+            }
+          : null;
 
         await db.ref('viajes/' + choferID + '/' + viajeKey).update({
           estado: 'en_curso',
-          aceptadoEn: new Date().toISOString()
+          aceptadoEn: new Date().toISOString(),
+          chofer_ubicacion_aceptacion: ubicacionAceptacion
         });
+
+        viajeActual.chofer_ubicacion_aceptacion = ubicacionAceptacion;
 
         await db.ref('choferes/' + choferID).update({ estado: 'ocupado' });
         if (viajeActual.reserva_id) {
@@ -875,6 +901,7 @@
 
           await db.ref('reservas/' + viajeActual.reserva_id).update({
             estado: 'En Curso',
+            chofer_ubicacion_aceptacion: ubicacionAceptacion,
             ...datosChoferCliente
           });
         }
@@ -980,6 +1007,10 @@
       if (!confirm('Seguro que deseas cancelar el viaje?')) return;
 
       try {
+        const ubicacionAceptacion = viajeActual.chofer_ubicacion_aceptacion || null;
+        const distanciaMovida = calcularDistanciaMetros(ubicacionAceptacion, ultimaPosicion);
+        const aplicaReasignacion = !!viajeActual.reserva_id && !!ubicacionAceptacion && distanciaMovida <= 120;
+
         await db.ref('historial/' + choferID).push({
           cliente: viajeActual.cliente || 'Cliente',
           origen: viajeActual.origen || '-',
@@ -992,7 +1023,26 @@
         });
 
         if (viajeActual.reserva_id) {
-          await db.ref('reservas/' + viajeActual.reserva_id).update({
+          await db.ref('reservas/' + viajeActual.reserva_id).update(aplicaReasignacion ? {
+            estado: 'Pendiente',
+            chofer_id: null,
+            chofer_asignado: null,
+            chofer_nombre: '',
+            chofer_marca: '',
+            chofer_modelo: '',
+            chofer_color: '',
+            chofer_placa: '',
+            chofer_ubicacion_inicial: null,
+            chofer_ubicacion_aceptacion: null,
+            reasignacion_pendiente: true,
+            reasignacion_motivo: 'Chofer cancelo sin avanzar; se buscara otro chofer.',
+            reembolso_automatico: true,
+            reembolso_estado: 'registrado',
+            reembolso_registrado_en: new Date().toISOString(),
+            eta_chofer_min: null,
+            eta_chofer_hora: null,
+            eta_actualizado_en: new Date().toISOString()
+          } : {
             estado: 'Cancelado',
             eta_chofer_min: null,
             eta_chofer_hora: null,
