@@ -726,7 +726,7 @@
 
         const dist = viaje.distancia_km ? (viaje.distancia_km + ' km') : (viaje.distancia || '-');
         const mins = viaje.duracion_min ? (viaje.duracion_min + ' min') : (viaje.tiempo || '-');
-        const precio = formatearMonto(viaje.total || viaje.precio || 0);
+        const precio = formatearMonto(obtenerPagoChofer(viaje));
 
         const chip = estado === 'pendiente'
           ? '<span class="status-chip pending">Pendiente</span>'
@@ -759,6 +759,21 @@
 
     function notificarNuevoViaje() {
       reproducirTonoNuevoViaje();
+    }
+
+    const DESCUENTO_CHOFER = 0.22;
+
+    function calcularPagoChofer(valor) {
+      const monto = Number(valor || 0);
+      if (!Number.isFinite(monto) || monto <= 0) return 0;
+      return Math.round(monto * (1 - DESCUENTO_CHOFER));
+    }
+
+    function obtenerPagoChofer(data) {
+      if (!data || typeof data !== 'object') return 0;
+      const pagoGuardado = Number(data.pago_chofer);
+      if (Number.isFinite(pagoGuardado) && pagoGuardado >= 0) return pagoGuardado;
+      return calcularPagoChofer(data.total || data.precio || 0);
     }
 
     function formatearMonto(valor) {
@@ -930,7 +945,7 @@
       document.getElementById('panel-destino').innerText = viaje.destino || '-';
       document.getElementById('panel-distancia').innerText = viaje.distancia_km ? (viaje.distancia_km + ' km') : (viaje.distancia || '-');
       actualizarPanelEta(null);
-      document.getElementById('panel-precio').innerText = formatearMonto(viaje.total || viaje.precio || 0);
+      document.getElementById('panel-precio').innerText = formatearMonto(obtenerPagoChofer(viaje));
 
       initMap(viaje.origen, viaje.destino);
       actualizarEtaViaje(true);
@@ -972,11 +987,13 @@
 
       try {
         const precio = Number(viajeActual.total || viajeActual.precio || 0);
+        const pago_chofer = obtenerPagoChofer(viajeActual);
         await db.ref('historial/' + choferID).push({
           cliente: viajeActual.cliente || 'Cliente',
           origen: viajeActual.origen || '-',
           destino: viajeActual.destino || '-',
           precio,
+          pago_chofer,
           estado: 'completado',
           fecha: new Date().toLocaleDateString(),
           hora: new Date().toLocaleTimeString(),
@@ -1096,7 +1113,7 @@
         items.forEach(h => {
           total++;
           const esOk = h.estado === 'completado';
-          const precio = Number(h.precio || 0);
+          const precio = obtenerPagoChofer(h);
           if (esOk) {
             completos++;
             ganancias += precio;
