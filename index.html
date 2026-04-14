@@ -455,6 +455,9 @@ let choferLivePos = null;
 let choferLiveHeading = 0;
 let autoCenterChofer = true;
 let reservaRatingValue = 0;
+let choferRouteRenderer = null;
+let reservaSeguimientoActual = null;
+let choferRouteBusy = false;
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB4R4P2AkHkhri6A7D7aIsWN-jswG19Y6o';
 window.GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY;
@@ -763,6 +766,16 @@ async function initMap(){
   });
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({map, suppressMarkers:true, preserveViewport:true});
+  choferRouteRenderer = new google.maps.DirectionsRenderer({
+    map,
+    suppressMarkers:true,
+    preserveViewport:true,
+    polylineOptions:{
+      strokeColor:'#d4af37',
+      strokeOpacity:0.9,
+      strokeWeight:5
+    }
+  });
   trafficLayer = new google.maps.TrafficLayer();
   trafficLayer.setMap(map);
   updateMapsStatus('ok', 'Mapas: activo');
@@ -1575,7 +1588,11 @@ async function guardarReserva(){
     cliente: nombre,
     vehiculo: pasajeros <= 3 ? 'Sedán VIP Diamond' : 'SUV Platinum Diamond',
     origen: coordOrigen.display || 'Sin dirección',
+    origen_lat: coordOrigen?.lat ?? null,
+    origen_lng: coordOrigen?.lon ?? null,
     destino: servicio === 'I' ? (coordDestino?.display || 'N/A') : 'Por tiempo',
+    destino_lat: servicio === 'I' ? (coordDestino?.lat ?? null) : null,
+    destino_lng: servicio === 'I' ? (coordDestino?.lon ?? null) : null,
     fecha: fecha,
     hora_recogida: `${hora}:${min} ${ampm}`,
     pasajeros: pasajeros,
@@ -1687,16 +1704,7 @@ async function enviarWhatsApp(){
 
   const numeroCentral = normalizarNumeroWhatsApp(WHATSAPP_CENTRAL);
   const encodedText = encodeURIComponent(lines);
-  const waUrl = `https://wa.me/${numeroCentral}?text=${encodedText}`;
-
-  if (esMovil) {
-    // En móvil, wa.me abre más rápido y evita bucles de instalación en algunos navegadores.
-    window.location.href = waUrl;
-  } else if (waWindow && !waWindow.closed) {
-    waWindow.location.href = waUrl;
-  } else {
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
-  }
+  abrirWhatsAppSeguro(numeroCentral, encodedText, waWindow);
 }
 
 async function obtenerInfoChoferParaWhatsApp(reservaId){
@@ -1758,6 +1766,30 @@ function normalizarNumeroWhatsApp(numero){
   return soloDigitos;
 }
 
+function abrirWhatsAppSeguro(numeroCentral, encodedText, waWindow){
+  const urlApi = `https://api.whatsapp.com/send?phone=${numeroCentral}&text=${encodedText}`;
+  const urlWeb = `https://web.whatsapp.com/send?phone=${numeroCentral}&text=${encodedText}`;
+  const urlApp = `whatsapp://send?phone=${numeroCentral}&text=${encodedText}`;
+  const esMovil = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+
+  if (esMovil) {
+    window.location.href = urlApp;
+    setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        window.location.href = urlApi;
+      }
+    }, 700);
+    return;
+  }
+
+  if (waWindow && !waWindow.closed) {
+    waWindow.location.href = urlWeb;
+    return;
+  }
+
+  window.open(urlWeb, '_blank', 'noopener,noreferrer');
+}
+
 function pagarConClip(){
   window.open(CLIP_PAYMENT_URL, '_blank', 'noopener,noreferrer');
 }
@@ -1816,6 +1848,18 @@ function renderEtaCliente(r){
   box.style.display = visible ? 'block' : 'none';
   document.getElementById('track-eta-min').textContent = min > 0 ? `${min} min` : 'Calculando';
   document.getElementById('track-eta-hora').textContent = hora || 'Calculando';
+}
+
+function renderEstadoReasignacion(r){
+  if (!r) return false;
+  const enReasignacion = r.reasignacion_pendiente === true;
+  if (!enReasignacion) return false;
+
+  const textoReembolso = r.reembolso_automatico
+    ? 'Tu reembolso fue registrado automáticamente.'
+    : 'Tu pago está siendo revisado.';
+  setTrackStatus(`Tu chofer canceló el viaje sin avanzar. ${textoReembolso} Se asignará otro chofer, por favor espera un momento.`, true);
+  return true;
 }
 
 function setRatingStatus(msg, ok = false){
@@ -1967,7 +2011,65 @@ function limpiarTrackingChofer(){
     choferLiveMarker.setMap(null);
     choferLiveMarker = null;
   }
+  if (choferRouteRenderer) {
+    choferRouteRenderer.set('directions', null);
+  }
+  reservaSeguimientoActual = null;
   renderEtaCliente(null);
+}
+
+function obtenerDestinoRutaChofer(reserva){
+  const estado = String(reserva?.estado || '').toLowerCase();
+  if (estado === 'asignado') {
+    return {
+      destination: reserva?.origen || null,
+      waypoints: []
+    };
+  }
+
+  if (estado === 'en curso' || estado === 'en_curso') {
+    const waypoints = [];
+    if (reserva?.origen && reserva?.destino && reserva.origen !== reserva.destino) {
+      waypoints.push({ location: reserva.origen, stopover: true });
+    }
+    return {
+      destination: reserva?.destino || reserva?.origen || null,
+      waypoints
+    };
+  }
+
+  return {
+    destination: reserva?.origen || null,
+    waypoints: []
+  };
+}
+
+async function renderRutaChofer(){
+  if (!directionsService || !choferRouteRenderer || !choferLivePos || !reservaSeguimientoActual || choferRouteBusy) return;
+
+  const config = obtenerDestinoRutaChofer(reservaSeguimientoActual);
+  if (!config.destination) return;
+
+  choferRouteBusy = true;
+  try {
+    const response = await new Promise((resolve, reject) => {
+      directionsService.route({
+        origin: choferLivePos,
+        destination: config.destination,
+        waypoints: config.waypoints,
+        optimizeWaypoints: false,
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: { departureTime: new Date(), trafficModel: 'bestguess' },
+        unitSystem: google.maps.UnitSystem.METRIC
+      }, (res, status) => status === 'OK' ? resolve(res) : reject(status));
+    });
+
+    choferRouteRenderer.setDirections(response);
+  } catch (err) {
+    console.warn('No se pudo dibujar la ruta del chofer:', err);
+  } finally {
+    choferRouteBusy = false;
+  }
 }
 
 function renderChoferLiveMarker(){
@@ -1985,6 +2087,7 @@ function renderChoferLiveMarker(){
     choferLiveMarker.setPosition(choferLivePos);
     choferLiveMarker.setIcon(iconoCarritoCliente(choferLiveHeading || 0));
   }
+  renderRutaChofer();
   if (autoCenterChofer) map.panTo(choferLivePos);
 }
 
@@ -2028,10 +2131,15 @@ function iniciarSeguimientoCliente(reservaId){
     }
 
     const estado = (r.estado || '').toLowerCase();
+  reservaSeguimientoActual = r;
     renderDriverInfo(r);
     completarDriverInfoDesdeChofer(r);
     renderEtaCliente(r);
     renderRatingBox(reservaId, r);
+    if (renderEstadoReasignacion(r)) {
+      limpiarTrackingChofer();
+      return;
+    }
     if (estado === 'pendiente') {
       setTrackStatus('Seguimiento en vivo: reserva pendiente de despacho...');
       return;
@@ -2043,10 +2151,16 @@ function iniciarSeguimientoCliente(reservaId){
     const choferId = r.chofer_id || r.chofer_asignado || null;
     if (choferId && (estado === 'en curso' || estado === 'en_curso' || estado === 'asignado')) {
       iniciarSeguimientoChofer(choferId);
+      renderRutaChofer();
     }
 
     if (estado === 'completado' || estado === 'cancelado') {
-      setTrackStatus(`Seguimiento finalizado: ${r.estado}.`, true);
+      setTrackStatus(
+        estado === 'completado'
+          ? 'Tu chofer ya finalizo el viaje. Ahora puedes dejar tu calificacion en estrellas.'
+          : `Seguimiento finalizado: ${r.estado}.`,
+        true
+      );
       limpiarTrackingChofer();
       if (estado === 'cancelado' || Number(r.calificacion_cliente || 0) > 0) {
         localStorage.removeItem(RESERVA_ACTIVA_KEY);
