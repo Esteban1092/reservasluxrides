@@ -289,10 +289,13 @@
     let notificationPermissionRequested = false;
     let ringtoneAudio = null;
     let ringtoneStopTimer = null;
+    let notificationRepeatInterval = null;
     let titleAlertInterval = null;
     let baseDocumentTitle = document.title;
     let viajeNotification = null;
     let viajeEmergenteActual = null;
+    let heartbeatInterval = null;
+    let wakeLockSentinel = null;
     let etaRequestInFlight = false;
     let etaLastRefreshAt = 0;
 
@@ -330,6 +333,42 @@
       }
     }
 
+    async function activarWakeLockChofer() {
+      if (!('wakeLock' in navigator) || wakeLockSentinel) return;
+      try {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel.addEventListener('release', () => {
+          wakeLockSentinel = null;
+        });
+      } catch (_) {}
+    }
+
+    async function liberarWakeLockChofer() {
+      if (!wakeLockSentinel) return;
+      try {
+        await wakeLockSentinel.release();
+      } catch (_) {}
+      wakeLockSentinel = null;
+    }
+
+    function iniciarHeartbeatChofer() {
+      if (heartbeatInterval || !choferID) return;
+      heartbeatInterval = setInterval(() => {
+        if (!choferID) return;
+        db.ref('choferes/' + choferID).update({
+          estado: viajeActual ? 'ocupado' : 'en linea',
+          ultimaConexion: new Date().toISOString(),
+          app_background: document.hidden === true
+        }).catch(() => {});
+      }, 45000);
+    }
+
+    function detenerHeartbeatChofer() {
+      if (!heartbeatInterval) return;
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+
     function iniciarAlertaTitulo() {
       if (titleAlertInterval) return;
       titleAlertInterval = setInterval(() => {
@@ -349,6 +388,11 @@
       if (ringtoneStopTimer) {
         clearTimeout(ringtoneStopTimer);
         ringtoneStopTimer = null;
+      }
+
+      if (notificationRepeatInterval) {
+        clearInterval(notificationRepeatInterval);
+        notificationRepeatInterval = null;
       }
 
       if (ringtoneAudio) {
@@ -420,6 +464,14 @@
       if (navigator.vibrate) {
         navigator.vibrate([400, 180, 400, 180, 700]);
       }
+
+      notificationRepeatInterval = setInterval(() => {
+        if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 250]);
+        mostrarNotificacionSistema();
+        if (ringtoneAudio && ringtoneAudio.paused) {
+          ringtoneAudio.play().catch(() => {});
+        }
+      }, 7000);
 
       iniciarAlertaTitulo();
       mostrarNotificacionSistema();
@@ -593,10 +645,12 @@
         });
 
         await prepararPermisoNotificaciones();
+        await activarWakeLockChofer();
         cargarDatosGuardados();
         escucharViajes();
         cargarHistorial();
         iniciarRastreoUbicacion();
+        iniciarHeartbeatChofer();
         initMapaLive();
       } catch (err) {
         console.error(err);
@@ -1442,6 +1496,8 @@
       if (!confirm('Deseas cerrar sesion?')) return;
       try {
         detenerNotificacionViaje();
+        detenerHeartbeatChofer();
+        await liberarWakeLockChofer();
         if (locationWatchId !== null) {
           navigator.geolocation.clearWatch(locationWatchId);
           locationWatchId = null;
@@ -1463,10 +1519,22 @@
 
     document.addEventListener('visibilitychange', () => {
       // Sin castigos por segundo plano: el chofer puede usar llamadas u otras apps.
+      if (choferID) {
+        db.ref('choferes/' + choferID).update({
+          estado: viajeActual ? 'ocupado' : 'en linea',
+          app_background: document.hidden === true,
+          ultimaConexion: new Date().toISOString()
+        }).catch(() => {});
+      }
       if (document.hidden) return;
+      activarWakeLockChofer().catch(() => {});
       if (viajePendienteNotificado) {
         detenerAlertaTitulo();
       }
+    });
+
+    window.addEventListener('focus', () => {
+      activarWakeLockChofer().catch(() => {});
     });
 
     function esc(str) {
