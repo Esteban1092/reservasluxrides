@@ -132,6 +132,16 @@ select{padding-left:12px;padding-right:12px;}
 .btn-track-mini{border:1px solid var(--gold);background:rgba(212,175,55,0.14);color:#7a5d10;border-radius:999px;padding:5px 10px;font-size:0.74rem;cursor:pointer;font-weight:600;}
 .driver-chip{margin-top:8px;padding:8px 10px;border:1px solid rgba(212,175,55,0.5);background:rgba(255,255,255,0.6);border-radius:8px;color:#5c4508;display:none;}
 .driver-chip b{color:#3f2f03;}
+.track-eta{display:none;margin-top:8px;padding:9px 10px;border-radius:8px;background:rgba(255,255,255,0.6);border:1px solid rgba(212,175,55,0.35);color:#5c4508;line-height:1.45;}
+.rating-box{display:none;margin-top:12px;padding:12px;border:1px solid rgba(212,175,55,0.45);background:rgba(255,255,255,0.72);border-radius:10px;}
+.rating-title{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:#7a5d10;margin-bottom:10px;}
+.rating-stars{display:flex;gap:8px;justify-content:center;margin-bottom:10px;}
+.star-btn{flex:1;max-width:48px;padding:10px 0;border:1px solid rgba(212,175,55,0.45);background:rgba(255,255,255,0.85);color:#b68b10;font-size:1.25rem;cursor:pointer;border-radius:10px;}
+.star-btn.active{background:rgba(212,175,55,0.18);border-color:var(--gold);color:#7a5d10;}
+.rating-box textarea{width:100%;min-height:78px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#1a1a1a;font-family:'Outfit',sans-serif;font-size:0.88rem;resize:vertical;}
+.rating-actions{display:flex;justify-content:flex-end;margin-top:10px;}
+.btn-rating{border:none;background:var(--gold);color:#050505;padding:11px 14px;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;cursor:pointer;}
+.rating-status{margin-top:8px;font-size:0.82rem;color:#7a5d10;min-height:18px;}
 .sugg-box{
   display:none;
   position:absolute;
@@ -336,9 +346,28 @@ select{padding-left:12px;padding-right:12px;}
           <div><b>Auto:</b> <span id="driver-marca">-</span> <span id="driver-modelo">-</span></div>
           <div><b>Color:</b> <span id="driver-color">-</span> · <b>Placa:</b> <span id="driver-placa">-</span></div>
         </div>
+        <div class="track-eta" id="track-eta">
+          <div><b>Tu carro llega en:</b> <span id="track-eta-min">-</span></div>
+          <div><b>Hora estimada:</b> <span id="track-eta-hora">-</span></div>
+        </div>
         <div class="track-actions">
           <button type="button" class="btn-track-mini" id="btn-track-center" onclick="toggleAutoCenterChofer()">Auto-centrar: ON</button>
         </div>
+      </div>
+      <div class="rating-box" id="rating-box">
+        <div class="rating-title">Califica tu viaje</div>
+        <div class="rating-stars" id="rating-stars">
+          <button type="button" class="star-btn" data-value="1" onclick="setReservaRating(1)">★</button>
+          <button type="button" class="star-btn" data-value="2" onclick="setReservaRating(2)">★</button>
+          <button type="button" class="star-btn" data-value="3" onclick="setReservaRating(3)">★</button>
+          <button type="button" class="star-btn" data-value="4" onclick="setReservaRating(4)">★</button>
+          <button type="button" class="star-btn" data-value="5" onclick="setReservaRating(5)">★</button>
+        </div>
+        <textarea id="rating-comment" placeholder="Cuéntanos cómo estuvo tu servicio"></textarea>
+        <div class="rating-actions">
+          <button type="button" class="btn-rating" id="btn-rating" onclick="guardarCalificacionReserva()">Enviar calificacion</button>
+        </div>
+        <div class="rating-status" id="rating-status"></div>
       </div>
     </div>
 
@@ -425,6 +454,7 @@ let choferUbicacionCallback = null;
 let choferLivePos = null;
 let choferLiveHeading = 0;
 let autoCenterChofer = true;
+let reservaRatingValue = 0;
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB4R4P2AkHkhri6A7D7aIsWN-jswG19Y6o';
 window.GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY;
@@ -1559,6 +1589,10 @@ async function guardarReserva(){
     distancia_km: servicio === 'I' ? resultado.distanciaKm : null,
     duracion_min: servicio === 'I' ? resultado.duracionMin : null,
     total: resultado.totalPrecio,
+    eta_chofer_min: null,
+    eta_chofer_hora: null,
+    calificacion_cliente: null,
+    opinion_cliente: '',
     estado: 'Pendiente'
   };
 
@@ -1771,6 +1805,123 @@ function renderDriverInfo(r){
   document.getElementById('driver-placa').textContent = placa || '-';
 }
 
+function renderEtaCliente(r){
+  const box = document.getElementById('track-eta');
+  if (!box) return;
+
+  const min = Number(r?.eta_chofer_min || 0);
+  const hora = r?.eta_chofer_hora || '';
+  const visible = min > 0 || !!hora;
+
+  box.style.display = visible ? 'block' : 'none';
+  document.getElementById('track-eta-min').textContent = min > 0 ? `${min} min` : 'Calculando';
+  document.getElementById('track-eta-hora').textContent = hora || 'Calculando';
+}
+
+function setRatingStatus(msg, ok = false){
+  const el = document.getElementById('rating-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = ok ? '#166534' : '#7a5d10';
+}
+
+function setReservaRating(value){
+  reservaRatingValue = Number(value || 0);
+  document.querySelectorAll('#rating-stars .star-btn').forEach((btn) => {
+    const btnValue = Number(btn.dataset.value || 0);
+    btn.classList.toggle('active', btnValue <= reservaRatingValue);
+  });
+}
+
+function renderRatingBox(reservaId, r){
+  const box = document.getElementById('rating-box');
+  const comment = document.getElementById('rating-comment');
+  const submit = document.getElementById('btn-rating');
+  if (!box || !comment || !submit) return;
+
+  const estado = String(r?.estado || '').toLowerCase();
+  if (estado !== 'completado') {
+    box.style.display = 'none';
+    setReservaRating(0);
+    comment.value = '';
+    comment.disabled = false;
+    submit.disabled = false;
+    document.querySelectorAll('#rating-stars .star-btn').forEach(btn => {
+      btn.disabled = false;
+    });
+    setRatingStatus('');
+    return;
+  }
+
+  box.style.display = 'block';
+  const yaCalificado = Number(r?.calificacion_cliente || 0) > 0;
+  setReservaRating(Number(r?.calificacion_cliente || 0));
+  comment.value = r?.opinion_cliente || '';
+  comment.disabled = yaCalificado;
+  submit.disabled = yaCalificado;
+  document.querySelectorAll('#rating-stars .star-btn').forEach(btn => {
+    btn.disabled = yaCalificado;
+  });
+
+  if (yaCalificado) {
+    setRatingStatus('Gracias. Tu calificacion ya fue guardada.', true);
+    localStorage.removeItem(RESERVA_ACTIVA_KEY);
+  } else {
+    setRatingStatus('');
+  }
+}
+
+async function guardarCalificacionReserva(){
+  if (!reservaActivaId) {
+    setRatingStatus('No hay una reserva activa para calificar.');
+    return;
+  }
+  if (reservaRatingValue < 1 || reservaRatingValue > 5) {
+    setRatingStatus('Selecciona de 1 a 5 estrellas antes de enviar.');
+    return;
+  }
+
+  await firebaseInitPromise;
+  const reservaRef = db.ref('reservas/' + reservaActivaId);
+  const snap = await reservaRef.once('value');
+  if (!snap.exists()) {
+    setRatingStatus('La reserva ya no existe en la base.');
+    return;
+  }
+
+  const reserva = snap.val() || {};
+  if (Number(reserva.calificacion_cliente || 0) > 0) {
+    renderRatingBox(reservaActivaId, reserva);
+    return;
+  }
+
+  const opinion = document.getElementById('rating-comment').value.trim();
+  const payload = {
+    calificacion_cliente: reservaRatingValue,
+    opinion_cliente: opinion,
+    calificado_en: new Date().toISOString()
+  };
+
+  await reservaRef.update(payload);
+
+  if (reserva.chofer_id) {
+    await db.ref('choferes/' + reserva.chofer_id + '/rating_stats').transaction((stats) => {
+      const actual = stats && typeof stats === 'object' ? stats : {};
+      const total = Number(actual.total || 0) + reservaRatingValue;
+      const count = Number(actual.count || 0) + 1;
+      return {
+        total,
+        count,
+        promedio: Number((total / count).toFixed(1)),
+        actualizado_en: new Date().toISOString()
+      };
+    });
+  }
+
+  renderRatingBox(reservaActivaId, { ...reserva, ...payload });
+  setRatingStatus('Gracias por tu opinion.', true);
+}
+
 async function completarDriverInfoDesdeChofer(r){
   if (!r) return;
   const choferId = r.chofer_id || r.chofer_asignado;
@@ -1816,6 +1967,7 @@ function limpiarTrackingChofer(){
     choferLiveMarker.setMap(null);
     choferLiveMarker = null;
   }
+  renderEtaCliente(null);
 }
 
 function renderChoferLiveMarker(){
@@ -1870,6 +2022,7 @@ function iniciarSeguimientoCliente(reservaId){
     if (!r) {
       setTrackStatus('Seguimiento finalizado.', false);
       limpiarTrackingChofer();
+      renderRatingBox(reservaId, null);
       localStorage.removeItem(RESERVA_ACTIVA_KEY);
       return;
     }
@@ -1877,6 +2030,8 @@ function iniciarSeguimientoCliente(reservaId){
     const estado = (r.estado || '').toLowerCase();
     renderDriverInfo(r);
     completarDriverInfoDesdeChofer(r);
+    renderEtaCliente(r);
+    renderRatingBox(reservaId, r);
     if (estado === 'pendiente') {
       setTrackStatus('Seguimiento en vivo: reserva pendiente de despacho...');
       return;
@@ -1893,7 +2048,9 @@ function iniciarSeguimientoCliente(reservaId){
     if (estado === 'completado' || estado === 'cancelado') {
       setTrackStatus(`Seguimiento finalizado: ${r.estado}.`, true);
       limpiarTrackingChofer();
-      localStorage.removeItem(RESERVA_ACTIVA_KEY);
+      if (estado === 'cancelado' || Number(r.calificacion_cliente || 0) > 0) {
+        localStorage.removeItem(RESERVA_ACTIVA_KEY);
+      }
     }
   };
 
