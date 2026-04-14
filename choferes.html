@@ -13,6 +13,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBzrYJajgNzbM9F1qrrHXfNe6UFkVw0fdM&libraries=places"></script>
 
   <style>
@@ -271,6 +272,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const FCM_VAPID_KEY = 'BHFqapvp0PyXQZTEQEKwIjDGt_KxIb2-gQ3Iu3uDNgz9fdrCH6T1ADyqvIbOSnwuoQEXs2KkB9_ZvUldqIGWpdQ';
 
     const MAX_LOGIN_ATTEMPTS = 2;
     const LOCK_TIME_MS = 20 * 60 * 1000;
@@ -305,6 +307,14 @@
     let driverServiceWorkerRegistration = null;
     let etaRequestInFlight = false;
     let etaLastRefreshAt = 0;
+    let foregroundPushListenerReady = false;
+    let messaging = null;
+
+    try {
+      messaging = firebase.messaging();
+    } catch (_) {
+      messaging = null;
+    }
 
     function getGuard() {
       try {
@@ -345,10 +355,58 @@
       if (driverServiceWorkerRegistration) return driverServiceWorkerRegistration;
 
       try {
-        driverServiceWorkerRegistration = await navigator.serviceWorker.register('./luxrides-driver-sw.js');
+        driverServiceWorkerRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
         return driverServiceWorkerRegistration;
       } catch (_) {
         return null;
+      }
+    }
+
+    function construirViajeDesdePayload(payload) {
+      const data = payload?.data || {};
+      return {
+        cliente: data.cliente || payload?.notification?.title || 'Cliente',
+        origen: data.origen || data.pickup || 'Origen pendiente',
+        destino: data.destino || data.dropoff || 'Destino pendiente'
+      };
+    }
+
+    function escucharMensajesPushForeground() {
+      if (!messaging || foregroundPushListenerReady) return;
+      foregroundPushListenerReady = true;
+
+      messaging.onMessage((payload) => {
+        const viaje = construirViajeDesdePayload(payload);
+        viajeEmergenteActual = viaje;
+        reproducirTonoNuevoViaje();
+      });
+    }
+
+    async function activarNotificacionesPushChofer() {
+      if (!messaging || !choferID) return;
+      if (Notification.permission !== 'granted') return;
+      if (!FCM_VAPID_KEY) {
+        console.warn('FCM sin VAPID key configurada. Define window.LUXRIDES_FCM_VAPID_KEY antes de cargar la app.');
+        return;
+      }
+
+      try {
+        const registration = await registrarServiceWorkerChofer();
+        if (!registration) return;
+
+        const token = await messaging.getToken({
+          vapidKey: FCM_VAPID_KEY,
+          serviceWorkerRegistration: registration
+        });
+
+        if (!token) return;
+
+        await db.ref('choferes/' + choferID).update({
+          fcmToken: token,
+          fcmTokenUpdatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.warn('No se pudo activar FCM para el chofer', err);
       }
     }
 
@@ -686,11 +744,13 @@
           nombre: choferNombre,
           estado: 'en linea',
           ultimaConexion: new Date().toISOString(),
-          app: 'choferes-luxrides-pro'
+          app: 'choferes-luxrides'
         });
 
         await prepararPermisoNotificaciones();
         await registrarServiceWorkerChofer();
+        escucharMensajesPushForeground();
+        await activarNotificacionesPushChofer();
         await activarWakeLockChofer();
         cargarDatosGuardados();
         escucharViajes();
@@ -1551,7 +1611,9 @@
 
         await db.ref('choferes/' + choferID).update({
           estado: 'offline',
-          ultimaConexion: new Date().toISOString()
+          ultimaConexion: new Date().toISOString(),
+          fcmToken: null,
+          fcmTokenUpdatedAt: new Date().toISOString()
         });
       } catch (err) {
         console.warn(err);
