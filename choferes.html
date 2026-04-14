@@ -97,6 +97,24 @@
     .map-panel button{width:100%;padding:10px;margin-top:8px;background:var(--gold);color:#090909;border:none;border-radius:8px;font-weight:700;cursor:pointer;}
     .map-panel .btn-cancelar{background:#d83a3a;color:#fff;}
 
+    .alerta-viaje{
+      position:fixed;top:18px;right:18px;z-index:2500;width:min(380px,calc(100vw - 24px));
+      background:linear-gradient(135deg,rgba(212,175,55,.96),rgba(133,77,14,.98));color:#111;
+      border:2px solid #fff3bf;border-radius:18px;padding:16px 16px 14px;
+      box-shadow:0 18px 42px rgba(0,0,0,.5);display:none;
+      animation:alertaPop .28s ease-out, alertaPulse 1s ease-in-out infinite;
+    }
+    .alerta-viaje.show{display:block;}
+    .alerta-viaje h3{font-size:1.05rem;margin-bottom:6px;letter-spacing:.04em;}
+    .alerta-viaje p{font-size:.88rem;margin:4px 0;color:#1a1a1a;font-weight:600;}
+    .alerta-viaje .sub{font-size:.76rem;text-transform:uppercase;letter-spacing:.16em;opacity:.75;margin-bottom:8px;}
+    .alerta-viaje-botones{display:flex;gap:8px;margin-top:12px;}
+    .alerta-viaje-botones button{flex:1;border:none;border-radius:10px;padding:11px 10px;font-weight:800;cursor:pointer;}
+    .alerta-btn-ver{background:#111;color:#fff;}
+    .alerta-btn-silencio{background:rgba(255,255,255,.82);color:#111;}
+    @keyframes alertaPop{from{opacity:0;transform:translateY(-14px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+    @keyframes alertaPulse{0%,100%{box-shadow:0 18px 42px rgba(0,0,0,.5),0 0 0 0 rgba(212,175,55,.35);}50%{box-shadow:0 18px 42px rgba(0,0,0,.5),0 0 0 10px rgba(212,175,55,0);}}
+
     .tab-content::-webkit-scrollbar{width:6px;}
     .tab-content::-webkit-scrollbar-thumb{background:var(--gold);border-radius:4px;}
   </style>
@@ -222,6 +240,18 @@
     </div>
   </div>
 
+  <div id="alerta-viaje" class="alerta-viaje" aria-live="assertive">
+    <div class="sub">Nuevo servicio</div>
+    <h3>Servicio pendiente por aceptar</h3>
+    <p><b>Cliente:</b> <span id="alerta-cliente">-</span></p>
+    <p><b>Origen:</b> <span id="alerta-origen">-</span></p>
+    <p><b>Destino:</b> <span id="alerta-destino">-</span></p>
+    <div class="alerta-viaje-botones">
+      <button class="alerta-btn-ver" type="button" onclick="abrirAlertaViajePendiente()">Ver servicio</button>
+      <button class="alerta-btn-silencio" type="button" onclick="detenerNotificacionViaje()">Silenciar</button>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDlzuMEutA5yDZLpRG62WEuxBQmi6y_tq0",
@@ -262,6 +292,7 @@
     let titleAlertInterval = null;
     let baseDocumentTitle = document.title;
     let viajeNotification = null;
+    let viajeEmergenteActual = null;
     let etaRequestInFlight = false;
     let etaLastRefreshAt = 0;
 
@@ -332,7 +363,27 @@
         viajeNotification = null;
       }
 
+      const alerta = document.getElementById('alerta-viaje');
+      if (alerta) alerta.classList.remove('show');
+
       detenerAlertaTitulo();
+    }
+
+    function mostrarEmergenteViaje(viaje) {
+      viajeEmergenteActual = viaje || null;
+      const alerta = document.getElementById('alerta-viaje');
+      if (!alerta) return;
+      document.getElementById('alerta-cliente').innerText = viaje?.cliente || 'Cliente';
+      document.getElementById('alerta-origen').innerText = viaje?.origen || '-';
+      document.getElementById('alerta-destino').innerText = viaje?.destino || '-';
+      alerta.classList.add('show');
+    }
+
+    function abrirAlertaViajePendiente() {
+      const btn = document.querySelector('.tab-btn');
+      cambiarTab('viajes', btn);
+      const alerta = document.getElementById('alerta-viaje');
+      if (alerta) alerta.classList.remove('show');
     }
 
     function mostrarNotificacionSistema() {
@@ -361,6 +412,7 @@
         ringtoneAudio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
         ringtoneAudio.volume = 1;
         ringtoneAudio.loop = true;
+        ringtoneAudio.playbackRate = 1.08;
         ringtoneAudio.play().catch(() => {});
         ringtoneStopTimer = setTimeout(() => detenerNotificacionViaje(), 30000);
       } catch (_) {}
@@ -371,6 +423,7 @@
 
       iniciarAlertaTitulo();
       mostrarNotificacionSistema();
+      mostrarEmergenteViaje(viajeEmergenteActual);
     }
 
     function lockMinutesLeft(lockUntil) {
@@ -720,7 +773,7 @@
         visibles++;
 
         if (estado === 'pendiente' && viajePendienteNotificado !== key) {
-          notificarNuevoViaje();
+          notificarNuevoViaje(viaje);
           viajePendienteNotificado = key;
         }
 
@@ -757,7 +810,8 @@
       }
     }
 
-    function notificarNuevoViaje() {
+    function notificarNuevoViaje(viaje) {
+      viajeEmergenteActual = viaje || null;
       reproducirTonoNuevoViaje();
     }
 
