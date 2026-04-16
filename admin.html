@@ -1268,94 +1268,17 @@ async function actualizarMapaChoferes() {
     visibles++;
   });
 
-  const clientesResueltos = await Promise.all(Object.entries(reservasActivasMapa).map(async ([reservaId, reserva]) => {
-    const pos = await obtenerPosicionCliente(reservaId, reserva);
-    return { reservaId, reserva, pos };
-  }));
-
-  const rutasPendientes = [];
-
-  clientesResueltos.forEach(({ reservaId, reserva, pos }) => {
-    if (!pos) return;
-    // Si la reserva ya no está activa (fue completada/cancelada durante el await), ignorar
-    if (!reservasActivasMapa[reservaId]) return;
-
-    const clienteNombre = String(reserva.cliente || 'Cliente');
-    const title = `Cliente · ${clienteNombre}`;
-    if (!clienteMapMarkers[reservaId]) {
-      clienteMapMarkers[reservaId] = new google.maps.Marker({
-        map: mapChoferes,
-        position: pos,
-        title,
-        icon: crearIconoCliente(),
-        label: {
-          text: clienteNombre,
-          color: '#FCA5A5',
-          fontSize: '11px',
-          fontWeight: '700'
-        }
-      });
-    } else {
-      clienteMapMarkers[reservaId].setPosition(pos);
-      clienteMapMarkers[reservaId].setTitle(title);
-      clienteMapMarkers[reservaId].setIcon(crearIconoCliente());
-      clienteMapMarkers[reservaId].setLabel({
-        text: clienteNombre,
-        color: '#FCA5A5',
-        fontSize: '11px',
-        fontWeight: '700'
-      });
-      clienteMapMarkers[reservaId].setMap(mapChoferes);
-    }
-
-    clientesActivos.add(reservaId);
-    bounds.extend(pos);
-    visibles++;
-    if (reserva.chofer_id && choferMapMarkers[reserva.chofer_id]) {
-      const choferPos = choferMapMarkers[reserva.chofer_id].getPosition();
-      bounds.extend(choferPos);
-
-      const linePath = [pos, { lat: choferPos.lat(), lng: choferPos.lng() }];
-      const lineaColor = reserva.reasignacion_pendiente ? '#EF4444' : '#60A5FA';
-      if (!clienteChoferLineas[reservaId]) {
-        clienteChoferLineas[reservaId] = new google.maps.Polyline({
-          map: mapChoferes,
-          path: linePath,
-          geodesic: true,
-          strokeColor: lineaColor,
-          strokeOpacity: 0.85,
-          strokeWeight: 2.5,
-          icons: [{
-            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
-            offset: '0',
-            repeat: '12px'
-          }]
-        });
-      } else {
-        clienteChoferLineas[reservaId].setPath(linePath);
-        clienteChoferLineas[reservaId].setOptions({ strokeColor: lineaColor });
-        clienteChoferLineas[reservaId].setMap(mapChoferes);
-      }
-      lineasActivas.add(reservaId);
-
-      rutasPendientes.push(
-        obtenerPathRutaReal(pos, { lat: choferPos.lat(), lng: choferPos.lng() })
-          .then((path) => {
-            if (!clienteChoferLineas[reservaId]) return;
-            clienteChoferLineas[reservaId].setPath(path);
-          })
-          .catch(() => {})
-      );
-    }
+  // Limpiar marcadores de clientes y líneas existentes (ya no se muestran)
+  Object.keys(clienteMapMarkers).forEach(id => {
+    clienteMapMarkers[id].setMap(null);
+    delete clienteMapMarkers[id];
+  });
+  Object.keys(clienteChoferLineas).forEach(id => {
+    clienteChoferLineas[id].setMap(null);
+    delete clienteChoferLineas[id];
   });
 
-  if (rutasPendientes.length) {
-    Promise.all(rutasPendientes).catch(() => {});
-  }
-
   limpiarMarcadoresInactivos(choferMapMarkers, choferesActivos);
-  limpiarMarcadoresInactivos(clienteMapMarkers, clientesActivos);
-  limpiarLineasInactivas(lineasActivas);
 
   if (visibles > 0) {
     mapChoferes.fitBounds(bounds);
