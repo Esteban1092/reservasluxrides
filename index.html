@@ -127,12 +127,12 @@ select{padding-left:12px;padding-right:12px;}
 .status-pill{font-size:0.72rem;letter-spacing:0.04em;padding:6px 10px;border:1px solid var(--border);background:rgba(255,255,255,0.55);color:var(--muted);border-radius:999px;}
 .status-pill.ok{border-color:rgba(34,197,94,0.5);color:#166534;background:rgba(34,197,94,0.12);}
 .status-pill.warn{border-color:rgba(239,68,68,0.45);color:#991b1b;background:rgba(239,68,68,0.10);}
-.track-box{margin-top:10px;padding:10px 12px;border:1px dashed var(--gold);background:rgba(212,175,55,0.08);font-size:0.83rem;color:var(--gold);display:none;}
+.track-box{margin-top:10px;padding:12px 14px;border:2px solid var(--gold);background:rgba(212,175,55,0.10);font-size:0.88rem;color:#5c4508;display:none;border-radius:10px;}
 .track-actions{display:flex;justify-content:flex-end;margin-top:8px;}
 .btn-track-mini{border:1px solid var(--gold);background:rgba(212,175,55,0.14);color:#7a5d10;border-radius:999px;padding:5px 10px;font-size:0.74rem;cursor:pointer;font-weight:600;}
-.driver-chip{margin-top:8px;padding:8px 10px;border:1px solid rgba(212,175,55,0.5);background:rgba(255,255,255,0.6);border-radius:8px;color:#5c4508;display:none;}
+.driver-chip{margin-top:10px;padding:10px 12px;border:1px solid rgba(212,175,55,0.5);background:rgba(255,255,255,0.75);border-radius:10px;color:#5c4508;display:none;font-size:0.88rem;line-height:1.5;}
 .driver-chip b{color:#3f2f03;}
-.track-eta{display:none;margin-top:8px;padding:9px 10px;border-radius:8px;background:rgba(255,255,255,0.6);border:1px solid rgba(212,175,55,0.35);color:#5c4508;line-height:1.45;}
+.track-eta{display:none;margin-top:10px;padding:12px;border-radius:10px;background:linear-gradient(135deg,rgba(212,175,55,0.12),rgba(34,197,94,0.08));border:1px solid rgba(212,175,55,0.45);color:#5c4508;line-height:1.5;font-size:0.9rem;}
 .rating-box{display:none;margin-top:12px;padding:12px;border:1px solid rgba(212,175,55,0.45);background:rgba(255,255,255,0.72);border-radius:10px;}
 .rating-title{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:#7a5d10;margin-bottom:10px;}
 .rating-stars{display:flex;gap:8px;justify-content:center;margin-bottom:10px;}
@@ -459,6 +459,8 @@ let reservaRatingValue = 0;
 let choferRouteRenderer = null;
 let reservaSeguimientoActual = null;
 let choferRouteBusy = false;
+let origenTrackMarker = null;
+let choferRutaRefreshTimer = null;
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB4R4P2AkHkhri6A7D7aIsWN-jswG19Y6o';
 window.GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY;
@@ -1805,14 +1807,34 @@ function pagarConClip(){
 function iconoCarritoCliente(rotation = 0){
   if (!window.google || !window.google.maps) return null;
   return {
-    path: 'M4 14h1l1 3h2l1-3h6l1 3h2l1-3h1a1 1 0 0 0 1-1V9.8a2 2 0 0 0-.88-1.66l-1.74-1.16L17.2 3.7A2 2 0 0 0 15.4 2H8.6a2 2 0 0 0-1.8 1.1L4.62 6.98 2.88 8.14A2 2 0 0 0 2 9.8V13a1 1 0 0 0 1 1zm4.6-9h6.8l1.4 2.8H7.2L8.6 5zM6 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm12 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z',
-    fillColor:'#f3df92',
-    fillOpacity:1,
-    strokeColor:'#111111',
-    strokeWeight:1.2,
-    scale:1.5,
-    rotation: Number(rotation) || 0,
-    anchor:new google.maps.Point(12,10)
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+        <g transform="rotate(${Number(rotation) || 0} 24 24)">
+          <rect x="10" y="8" width="28" height="32" rx="6" fill="#1a1a1a" stroke="#D4AF37" stroke-width="2"/>
+          <rect x="12" y="10" width="24" height="12" rx="3" fill="#4a90d9"/>
+          <rect x="12" y="26" width="24" height="10" rx="2" fill="#2a2a2a"/>
+          <circle cx="15" cy="38" r="3" fill="#555" stroke="#D4AF37" stroke-width="1"/>
+          <circle cx="33" cy="38" r="3" fill="#555" stroke="#D4AF37" stroke-width="1"/>
+          <rect x="14" y="28" width="6" height="3" rx="1" fill="#D4AF37" opacity="0.9"/>
+          <rect x="28" y="28" width="6" height="3" rx="1" fill="#D4AF37" opacity="0.9"/>
+          <polygon points="24,6 20,10 28,10" fill="#D4AF37" opacity="0.7"/>
+        </g>
+      </svg>
+    `),
+    scaledSize: new google.maps.Size(48, 48),
+    anchor: new google.maps.Point(24, 24)
+  };
+}
+
+function iconoOrigenCliente(){
+  if (!window.google || !window.google.maps) return null;
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 10,
+    fillColor: '#22C55E',
+    fillOpacity: 1,
+    strokeColor: '#ffffff',
+    strokeWeight: 3
   };
 }
 
@@ -1956,7 +1978,9 @@ async function guardarCalificacionReserva(){
 
   await reservaRef.update(payload);
 
+  // Guardar calificacion en el chofer
   if (reserva.chofer_id) {
+    // Actualizar rating_stats promedio
     await db.ref('choferes/' + reserva.chofer_id + '/rating_stats').transaction((stats) => {
       const actual = stats && typeof stats === 'object' ? stats : {};
       const total = Number(actual.total || 0) + reservaRatingValue;
@@ -1968,6 +1992,26 @@ async function guardarCalificacionReserva(){
         actualizado_en: new Date().toISOString()
       };
     });
+
+    // Guardar calificacion individual en el historial del chofer
+    await db.ref('choferes/' + reserva.chofer_id + '/calificaciones').push({
+      reserva_id: reservaActivaId,
+      cliente: reserva.cliente || 'Cliente',
+      estrellas: reservaRatingValue,
+      opinion: opinion,
+      fecha: new Date().toISOString()
+    });
+
+    // También actualizar en historial si existe
+    try {
+      const histSnap = await db.ref('historial/' + reserva.chofer_id).orderByChild('reserva_id').equalTo(reservaActivaId).once('value');
+      histSnap.forEach(child => {
+        db.ref('historial/' + reserva.chofer_id + '/' + child.key).update({
+          calificacion_cliente: reservaRatingValue,
+          opinion_cliente: opinion
+        });
+      });
+    } catch(e) { console.warn('No se pudo actualizar historial:', e); }
   }
 
   renderRatingBox(reservaActivaId, { ...reserva, ...payload });
@@ -1978,9 +2022,6 @@ async function completarDriverInfoDesdeChofer(r){
   if (!r) return;
   const choferId = r.chofer_id || r.chofer_asignado;
   if (!choferId) return;
-
-  const faltan = !(r.chofer_marca || r.chofer_modelo || r.chofer_color || r.chofer_placa);
-  if (!faltan) return;
 
   try {
     const snap = await db.ref('choferes/' + choferId).once('value');
@@ -2019,8 +2060,16 @@ function limpiarTrackingChofer(){
     choferLiveMarker.setMap(null);
     choferLiveMarker = null;
   }
+  if (origenTrackMarker) {
+    origenTrackMarker.setMap(null);
+    origenTrackMarker = null;
+  }
   if (choferRouteRenderer) {
     choferRouteRenderer.set('directions', null);
+  }
+  if (choferRutaRefreshTimer) {
+    clearInterval(choferRutaRefreshTimer);
+    choferRutaRefreshTimer = null;
   }
   reservaSeguimientoActual = null;
   renderEtaCliente(null);
@@ -2073,6 +2122,40 @@ async function renderRutaChofer(){
     });
 
     choferRouteRenderer.setDirections(response);
+
+    // Actualizar ETA desde la ruta calculada
+    const leg = response?.routes?.[0]?.legs?.[0];
+    if (leg) {
+      const etaMin = Math.round((leg.duration_in_traffic?.value || leg.duration?.value || 0) / 60);
+      const ahora = new Date();
+      const llegada = new Date(ahora.getTime() + etaMin * 60000);
+      const horaLlegada = llegada.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+      // Actualizar el ETA en la UI
+      const etaMinEl = document.getElementById('track-eta-min');
+      const etaHoraEl = document.getElementById('track-eta-hora');
+      const etaBox = document.getElementById('track-eta');
+      if (etaMinEl) etaMinEl.textContent = `${etaMin} min`;
+      if (etaHoraEl) etaHoraEl.textContent = horaLlegada;
+      if (etaBox) etaBox.style.display = 'block';
+
+      // Actualizar ETA en Firebase para que el despacho lo vea
+      if (reservaActivaId && db) {
+        db.ref('reservas/' + reservaActivaId).update({
+          eta_chofer_min: etaMin,
+          eta_chofer_hora: horaLlegada
+        }).catch(() => {});
+      }
+
+      // Actualizar el texto de seguimiento
+      const estado = String(reservaSeguimientoActual?.estado || '').toLowerCase();
+      const nombreChofer = reservaSeguimientoActual?.chofer_nombre || 'Tu chofer';
+      if (estado === 'asignado') {
+        setTrackStatus(`🚗 ${nombreChofer} viene en camino. Llega en ~${etaMin} min (${horaLlegada})`);
+      } else if (estado === 'en curso' || estado === 'en_curso') {
+        setTrackStatus(`🚘 ${nombreChofer} te lleva a tu destino. Llegada en ~${etaMin} min.`);
+      }
+    }
   } catch (err) {
     console.warn('No se pudo dibujar la ruta del chofer:', err);
   } finally {
@@ -2080,8 +2163,41 @@ async function renderRutaChofer(){
   }
 }
 
+function mostrarOrigenEnMapa(){
+  if (!map || !window.google || !window.google.maps || !reservaSeguimientoActual) return;
+
+  const lat = Number(reservaSeguimientoActual.origen_lat);
+  const lng = Number(reservaSeguimientoActual.origen_lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  const pos = { lat, lng };
+  if (!origenTrackMarker) {
+    origenTrackMarker = new google.maps.Marker({
+      map,
+      position: pos,
+      icon: iconoOrigenCliente(),
+      title: '📍 Tu punto de recogida',
+      zIndex: 998,
+      label: {
+        text: '📍 Recogida',
+        color: '#166534',
+        fontSize: '11px',
+        fontWeight: '700',
+        className: 'marker-label-origen'
+      }
+    });
+  } else {
+    origenTrackMarker.setPosition(pos);
+    origenTrackMarker.setMap(map);
+  }
+}
+
 function renderChoferLiveMarker(){
   if (!map || !choferLivePos || !window.google || !window.google.maps) return;
+
+  // Mostrar marcador del punto de recogida
+  mostrarOrigenEnMapa();
+
   if (!choferLiveMarker) {
     choferLiveMarker = new google.maps.Marker({
       map,
@@ -2095,8 +2211,28 @@ function renderChoferLiveMarker(){
     choferLiveMarker.setPosition(choferLivePos);
     choferLiveMarker.setIcon(iconoCarritoCliente(choferLiveHeading || 0));
   }
+
+  // Redibujar ruta cada actualización de ubicación
   renderRutaChofer();
-  if (autoCenterChofer) map.panTo(choferLivePos);
+
+  // Ajustar vista para ver tanto el chofer como el origen
+  if (autoCenterChofer) {
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(choferLivePos);
+    if (origenTrackMarker) {
+      bounds.extend(origenTrackMarker.getPosition());
+    }
+    // Si ambos puntos son muy cercanos, panTo; si no, fitBounds
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    const distLat = Math.abs(ne.lat() - sw.lat());
+    const distLng = Math.abs(ne.lng() - sw.lng());
+    if (distLat < 0.005 && distLng < 0.005) {
+      map.panTo(choferLivePos);
+    } else {
+      map.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+    }
+  }
 }
 
 function iniciarSeguimientoChofer(choferId){
@@ -2105,7 +2241,7 @@ function iniciarSeguimientoChofer(choferId){
 
   limpiarTrackingChofer();
   choferLiveId = choferId;
-  setTrackStatus('Seguimiento en vivo: chofer en camino...');
+  setTrackStatus('🚗 Seguimiento en vivo: chofer en camino...');
 
   choferUbicacionCallback = (snap) => {
     const u = snap.val();
@@ -2116,6 +2252,14 @@ function iniciarSeguimientoChofer(choferId){
   };
 
   db.ref('choferes/' + choferId + '/ubicacion').on('value', choferUbicacionCallback);
+
+  // Refrescar ruta y ETA cada 30 segundos
+  if (choferRutaRefreshTimer) clearInterval(choferRutaRefreshTimer);
+  choferRutaRefreshTimer = setInterval(() => {
+    if (choferLivePos && reservaSeguimientoActual) {
+      renderRutaChofer();
+    }
+  }, 30000);
 }
 
 // ── FCM Push Notifications para Cliente ──
@@ -2233,7 +2377,11 @@ function iniciarSeguimientoCliente(reservaId){
       return;
     }
     if (estado === 'asignado') {
-      setTrackStatus('Seguimiento en vivo: chofer asignado, esperando inicio...');
+      const nombreChofer = r.chofer_nombre || 'tu chofer';
+      setTrackStatus(`✅ Chofer asignado: ${nombreChofer}. En camino a recogerte...`);
+      // Mostrar datos del conductor inmediatamente
+      renderDriverInfo(r);
+      completarDriverInfoDesdeChofer(r);
     }
 
     const choferId = r.chofer_id || r.chofer_asignado || null;
