@@ -2513,6 +2513,10 @@ function reanudarTrackingSiNecesario(){
   // Forzar re-lectura para obtener el estado más reciente
   db.ref('reservas/' + guardada).once('value').then(snap => {
     if (reservaStatusCallback) reservaStatusCallback(snap);
+    // Re-renderizar ruta tras actualizar estado (chofer puede estar offline)
+    if (choferLivePos && reservaSeguimientoActual) {
+      renderRutaChofer();
+    }
   }).catch(() => {});
 }
 
@@ -2524,6 +2528,24 @@ document.addEventListener('visibilitychange', () => {
     // Reconectar Firebase y reanudar tracking al volver
     reconectarFirebase();
     reanudarTrackingSiNecesario();
+
+    // Forzar re-render de ruta y marcador del chofer si el tracking sigue activo
+    setTimeout(() => {
+      if (choferLivePos && reservaSeguimientoActual) {
+        renderChoferLiveMarker();
+        renderRutaChofer();
+
+        // Reiniciar timer de ruta por si se detuvo en segundo plano
+        if (choferLiveId && !choferRutaRefreshTimer) {
+          choferRutaRefreshTimer = setInterval(() => {
+            if (choferLivePos && reservaSeguimientoActual) {
+              renderRutaChofer();
+            }
+          }, 30000);
+        }
+      }
+    }, 1500);
+
     // Reiniciar actualizaciones en vivo si estaban activas
     if (resultado && servicio === 'I' && coordOrigen && coordDestino && directionsService) {
       startLiveUpdates();
