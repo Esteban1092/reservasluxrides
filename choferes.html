@@ -212,6 +212,9 @@
         <p><b>Color:</b> <span id="info-color">Sin color</span></p>
         <p><b>Placa:</b> <span id="info-placa">XYZ-001</span></p>
         <p><b>Calificacion:</b> <span id="info-rating">Sin calificaciones</span></p>
+        <div id="ultima-calificacion" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:8px;font-size:0.82rem;color:#5c4508;">
+          <div id="ultima-cal-texto"></div>
+        </div>
         <p><b>Estado:</b> <span id="info-estado" style="color:#86efac">En linea</span></p>
 
         <div class="inline-field">
@@ -685,6 +688,12 @@
         registro_manual_en: data.registro_manual_en || new Date().toISOString()
       });
 
+      // Registrar onDisconnect para marcar desconectado si se pierde la conexión
+      choferRef.onDisconnect().update({
+        estado: 'Desconectado',
+        ultimaConexion: new Date().toISOString()
+      });
+
       return {
         id: canonicalId,
         data: {
@@ -767,6 +776,12 @@
           estado: 'en linea',
           ultimaConexion: new Date().toISOString(),
           app: 'choferes-luxrides'
+        });
+
+        // Registrar onDisconnect para que Firebase marque desconectado si se pierde la conexión
+        db.ref('choferes/' + choferID).onDisconnect().update({
+          estado: 'Desconectado',
+          ultimaConexion: new Date().toISOString()
         });
 
         await prepararPermisoNotificaciones();
@@ -867,6 +882,24 @@
         document.getElementById('info-rating').innerText = count > 0
           ? `⭐ ${promedio.toFixed(1)} / 5 (${count} calificaciones)`
           : 'Sin calificaciones';
+      });
+
+      // Mostrar última calificación recibida
+      db.ref('choferes/' + choferID + '/calificaciones').orderByChild('fecha').limitToLast(1).on('value', snap => {
+        const box = document.getElementById('ultima-calificacion');
+        const texto = document.getElementById('ultima-cal-texto');
+        if (!box || !texto) return;
+        let found = false;
+        snap.forEach(child => {
+          const cal = child.val() || {};
+          const estrellas = Number(cal.estrellas || 0);
+          const opinion = cal.opinion || '';
+          const cliente = cal.cliente || 'Cliente';
+          box.style.display = 'block';
+          texto.innerHTML = `<b>Última opinión de ${esc(cliente)}:</b> ${'★'.repeat(estrellas)}${'☆'.repeat(5 - estrellas)}${opinion ? ' — <i>"' + esc(opinion) + '"</i>' : ''}`;
+          found = true;
+        });
+        if (!found) box.style.display = 'none';
       });
     }
 
@@ -1665,6 +1698,26 @@
 
     window.addEventListener('focus', () => {
       activarWakeLockChofer().catch(() => {});
+    });
+
+    // Marcar desconectado al cerrar/recargar la página
+    window.addEventListener('beforeunload', () => {
+      if (choferID && db) {
+        // sendBeacon no disponible para Firebase; usar update síncrono
+        db.ref('choferes/' + choferID).update({
+          estado: 'Desconectado',
+          ultimaConexion: new Date().toISOString()
+        }).catch(() => {});
+      }
+    });
+
+    window.addEventListener('pagehide', () => {
+      if (choferID && db) {
+        db.ref('choferes/' + choferID).update({
+          estado: 'Desconectado',
+          ultimaConexion: new Date().toISOString()
+        }).catch(() => {});
+      }
     });
 
     function esc(str) {
