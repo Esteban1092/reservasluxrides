@@ -668,6 +668,33 @@
       return null;
     }
 
+    async function habilitarInicioManualChofer(idIngresado, nombreIngresado) {
+      const canonicalId = normalizarChoferId(idIngresado);
+      const choferRef = db.ref('choferes/' + canonicalId);
+      const snap = await choferRef.once('value');
+      const data = snap.val() || {};
+      const nombreExistente = String(data.nombre || '').trim();
+      const nombreFinal = nombreExistente || String(nombreIngresado || '').trim();
+
+      await choferRef.update({
+        nombre: nombreFinal,
+        estado: 'en linea',
+        ultimaConexion: new Date().toISOString(),
+        app: 'choferes-luxrides',
+        registro_manual: true,
+        registro_manual_en: data.registro_manual_en || new Date().toISOString()
+      });
+
+      return {
+        id: canonicalId,
+        data: {
+          ...data,
+          nombre: nombreFinal,
+          registro_manual: true
+        }
+      };
+    }
+
     async function validarIngreso() {
       const guard = getGuard();
       if (guard.lockUntil > Date.now()) {
@@ -684,31 +711,26 @@
       }
 
       try {
-        const choferResuelto = await resolverChoferId(choferID);
+        let accesoManualSinDespacho = false;
+        let choferResuelto = await resolverChoferId(choferID);
         if (!choferResuelto) {
-          const updated = getGuard();
-          updated.attempts = (updated.attempts || 0) + 1;
-          if (updated.attempts >= MAX_LOGIN_ATTEMPTS) {
-            updated.attempts = 0;
-            updated.lockUntil = Date.now() + LOCK_TIME_MS;
-            setGuard(updated);
-            showError('ID invalido. Bloqueado 20 minutos.');
-          } else {
-            setGuard(updated);
-            showError('ID no registrado. Te queda 1 intento.');
-          }
-          return;
+          accesoManualSinDespacho = true;
+          choferResuelto = await habilitarInicioManualChofer(choferID, choferNombre);
         }
 
         choferID = await sincronizarAliasesChofer(choferResuelto.id);
         const chSnap = await db.ref('choferes/' + choferID).once('value');
         const ch = chSnap.val() || choferResuelto.data || {};
-        const nombreAsignado = (ch.nombre || '').trim();
+        let nombreAsignado = (ch.nombre || '').trim();
+        if (!nombreAsignado && accesoManualSinDespacho) {
+          nombreAsignado = choferNombre;
+          await db.ref('choferes/' + choferID).update({ nombre: nombreAsignado });
+        }
         if (!nombreAsignado) {
           showError('Este ID no tiene nombre asignado. Contacta al despacho.');
           return;
         }
-        if (normalizarNombre(choferNombre) !== normalizarNombre(nombreAsignado)) {
+        if (!accesoManualSinDespacho && normalizarNombre(choferNombre) !== normalizarNombre(nombreAsignado)) {
           showError('Nombre no autorizado para este ID. Usa el nombre asignado por despacho.');
           return;
         }
