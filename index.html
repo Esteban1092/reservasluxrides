@@ -402,6 +402,7 @@ const firebaseInitPromise = (async () => {
   try {
     await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
     await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js");
+    await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
     if (typeof firebase !== 'undefined' && !firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -463,6 +464,11 @@ const GOOGLE_MAPS_API_KEY = 'AIzaSyB4R4P2AkHkhri6A7D7aIsWN-jswG19Y6o';
 window.GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY;
 const WHATSAPP_CENTRAL = '+525527729551';
 const CLIP_PAYMENT_URL = 'https://clip.mx/@Luxridesreservas.com';
+const FCM_VAPID_KEY = 'BHFqapvp0PyXQZTEQEKwIjDGt_KxIb2-gQ3Iu3uDNgz9fdrCH6T1ADyqvIbOSnwuoQEXs2KkB9_ZvUldqIGWpdQ';
+let clientMessaging = null;
+let clientSWRegistration = null;
+let clientFcmToken = null;
+let foregroundPushReady = false;
 
 const MEXICO_STATE_SUGGESTIONS = [
   { state: 'Aguascalientes', capital: 'Aguascalientes', lat: 21.8853, lon: -102.2916, aliases: ['aguascalientes'] },
@@ -1610,7 +1616,9 @@ async function guardarReserva(){
     eta_chofer_hora: null,
     calificacion_cliente: null,
     opinion_cliente: '',
-    estado: 'Pendiente'
+    estado: 'Pendiente',
+    cliente_fcm_token: clientFcmToken || null,
+    cliente_fcm_updated: clientFcmToken ? new Date().toISOString() : null
   };
 
   // Intento 1: SDK de Firebase (rápido y nativo)
@@ -2110,9 +2118,89 @@ function iniciarSeguimientoChofer(choferId){
   db.ref('choferes/' + choferId + '/ubicacion').on('value', choferUbicacionCallback);
 }
 
+// ── FCM Push Notifications para Cliente ──
+
+async function registrarClientSW(){
+  if (!('serviceWorker' in navigator)) return null;
+  if (clientSWRegistration) return clientSWRegistration;
+  try {
+    clientSWRegistration = await navigator.serviceWorker.register('./luxrides-client-sw.js');
+    return clientSWRegistration;
+  } catch(e) {
+    console.warn('No se pudo registrar service worker del cliente:', e);
+    return null;
+  }
+}
+
+async function inicializarFCMCliente(){
+  try {
+    if (!firebaseReady || typeof firebase === 'undefined') return;
+    if (!clientMessaging) {
+      clientMessaging = firebase.messaging();
+    }
+
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+    if (Notification.permission !== 'granted') return;
+
+    const registration = await registrarClientSW();
+    if (!registration) return;
+
+    const token = await clientMessaging.getToken({
+      vapidKey: FCM_VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) return;
+    clientFcmToken = token;
+    console.log('FCM Cliente token obtenido');
+
+    // Guardar token en la reserva activa si existe
+    if (reservaActivaId && db) {
+      await db.ref('reservas/' + reservaActivaId).update({
+        cliente_fcm_token: token,
+        cliente_fcm_updated: new Date().toISOString()
+      });
+    }
+
+    // Escuchar mensajes en foreground
+    if (!foregroundPushReady) {
+      foregroundPushReady = true;
+      clientMessaging.onMessage((payload) => {
+        const data = payload?.data || payload?.notification || {};
+        const title = data.title || 'LuxRides';
+        const body = data.body || '';
+        mostrarNotificacionCliente(title, body);
+      });
+    }
+  } catch(e) {
+    console.warn('Error inicializando FCM cliente:', e);
+  }
+}
+
+function mostrarNotificacionCliente(title, body){
+  // Toast visual en la app
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999;background:#1a1a2e;color:#f3df92;padding:14px 20px;border-radius:12px;border:1px solid #d4af37;font-size:.92rem;max-width:340px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:fadeIn .3s;';
+  toast.innerHTML = `<strong>${title}</strong><br>${body}`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .4s'; }, 4500);
+  setTimeout(() => toast.remove(), 5000);
+
+  // Notificación nativa también si hay permiso
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(title, { body, icon: './luxrides-driver-icon.svg' }); } catch(_){}
+  }
+}
+
 function iniciarSeguimientoCliente(reservaId){
   if (!reservaId) return;
   reservaActivaId = reservaId;
+
+  // Inicializar FCM del cliente para recibir push en segundo plano
+  inicializarFCMCliente();
   localStorage.setItem(RESERVA_ACTIVA_KEY, reservaId);
   setTrackStatus('Seguimiento en vivo: esperando asignacion de chofer...');
 
