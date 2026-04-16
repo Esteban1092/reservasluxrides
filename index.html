@@ -2391,13 +2391,21 @@ function iniciarSeguimientoCliente(reservaId){
     }
 
     if (estado === 'completado' || estado === 'cancelado') {
+      // Limpiar TODA la presencia del chofer en el mapa
+      limpiarTrackingChofer();
+      // Ocultar ETA
+      const etaBox = document.getElementById('track-eta');
+      if (etaBox) etaBox.style.display = 'none';
+      // Ocultar driver chip
+      const chip = document.getElementById('driver-chip');
+      if (chip) chip.style.display = 'none';
+
       setTrackStatus(
         estado === 'completado'
-          ? 'Tu chofer ya finalizo el viaje. Ahora puedes dejar tu calificacion en estrellas.'
+          ? '✅ Tu chofer ya finalizó el viaje. Ahora puedes dejar tu calificación en estrellas.'
           : `Seguimiento finalizado: ${r.estado}.`,
         true
       );
-      limpiarTrackingChofer();
       if (estado === 'cancelado' || Number(r.calificacion_cliente || 0) > 0) {
         localStorage.removeItem(RESERVA_ACTIVA_KEY);
       }
