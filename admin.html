@@ -315,7 +315,10 @@
   <div class="panel-title">🗺️ Monitoreo Activo y Pagos</div>
   <div class="monitor-grid">
     <div>
-      <div id="map-choferes"></div>
+      <div style="position:relative;">
+        <div id="map-choferes"></div>
+        <button type="button" onclick="refrescarMapa()" style="position:absolute;top:10px;right:10px;z-index:10;background:var(--gold);color:#050505;border:none;padding:8px 14px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .2s;">🔄 Refrescar mapa</button>
+      </div>
     </div>
     <div>
       <div class="pay-head">
@@ -628,8 +631,14 @@ function iniciarListeners() {
         return;
       }
       reservasActivasMapa[child.key] = { id: child.key, ...r };
-      if (r.estado !== 'Pendiente') return;
-      count++;
+
+      // Mostrar tarjetas para Pendiente y Asignado/En curso
+      const esPendiente = r.estado === 'Pendiente';
+      const esAsignado = estadoNormalizado === 'asignado';
+      const esEnCurso = estadoNormalizado === 'en curso' || estadoNormalizado === 'en_curso';
+
+      if (!esPendiente && !esAsignado && !esEnCurso) return;
+      if (esPendiente) count++;
 
       const fecha = r.fecha || '—';
       const hora  = r.hora_recogida || '—';
@@ -645,24 +654,49 @@ function iniciarListeners() {
         ? `<p style="color:#86efac"><b>💸 Reembolso:</b> ${escHtml(r.reembolso_estado || 'registrado')}</p>`
         : '';
 
+      // Color del borde según estado
+      const borderColor = esPendiente ? 'var(--gold)' : esAsignado ? 'rgba(59,130,246,0.7)' : 'rgba(34,197,94,0.7)';
+      const estadoBadge = esPendiente
+        ? '<span style="background:rgba(212,175,55,0.2);color:#f5d57b;padding:3px 8px;border-radius:999px;font-size:0.72rem;font-weight:600;">⏳ PENDIENTE</span>'
+        : esAsignado
+        ? `<span style="background:rgba(59,130,246,0.15);color:#93c5fd;padding:3px 8px;border-radius:999px;font-size:0.72rem;font-weight:600;">🚗 ASIGNADO a ${escHtml(r.chofer_nombre || r.chofer_id || '?')}</span>`
+        : `<span style="background:rgba(34,197,94,0.15);color:#86efac;padding:3px 8px;border-radius:999px;font-size:0.72rem;font-weight:600;">🚘 EN CURSO — ${escHtml(r.chofer_nombre || r.chofer_id || '?')}</span>`;
+
+      // Calificación del cliente si existe
+      const calificacion = Number(r.calificacion_cliente || 0);
+      const calificacionHtml = calificacion > 0
+        ? `<p style="color:#fde68a;">⭐ Calificación: ${'★'.repeat(calificacion)}${'☆'.repeat(5 - calificacion)} ${r.opinion_cliente ? '— <i>"' + escHtml(r.opinion_cliente) + '"</i>' : ''}</p>`
+        : '';
+
       div.innerHTML += `
-        <div class="tarjeta" id="tarjeta-${child.key}">
-          <p><b>👤 ${escHtml(r.cliente || 'Sin nombre')}</b></p>
+        <div class="tarjeta" id="tarjeta-${child.key}" style="border-left-color:${borderColor};">
+          ${estadoBadge}
+          <p style="margin-top:6px;"><b>👤 ${escHtml(r.cliente || 'Sin nombre')}</b></p>
           <p>📍 <b>${escHtml(r.origen)}</b>${r.destino && r.destino !== 'Por tiempo' ? ' ➔ <b>' + escHtml(r.destino) + '</b>' : ''}</p>
           <p>📅 ${fecha} · ⏰ ${hora}</p>
           <p>🚘 ${escHtml(veh)} · 👥 ${pax} pax · ${escHtml(svc)} · ${escHtml(trasl)}${escHtml(vlNum)}</p>
           ${r.distancia_km ? `<p>📏 ${r.distancia_km} km · ⏱️ ${r.duracion_min} min</p>` : ''}
           ${avisoReasignacion}
           ${avisoReembolso}
+          ${calificacionHtml}
           <div class="precio">$${Number(r.total||0).toLocaleString('es-MX')} MXN</div>
           <hr>
+          ${esPendiente ? `
           <div class="assign-row">
             <label>Asignar a:</label>
             <select class="sel-chofer" id="sel-${child.key}">
               <option value="">— Seleccionar chofer —</option>
             </select>
             <button class="btn-despachar" onclick="despachar('${child.key}')">ENVIAR 🚀</button>
-          </div>
+          </div>` : ''}
+          ${esAsignado ? `
+          <div class="assign-row" style="margin-top:8px;">
+            <label>↻ Reasignar a:</label>
+            <select class="sel-chofer" id="sel-${child.key}">
+              <option value="">— Otro chofer —</option>
+            </select>
+            <button class="btn-despachar" style="background:#3B82F6;color:#fff;" onclick="reasignarChofer('${child.key}')">REASIGNAR ↻</button>
+          </div>` : ''}
         </div>`;
 
       // Populate select with current drivers
@@ -674,8 +708,8 @@ function iniciarListeners() {
     setBadge('badge-pendientes', count > 0 ? 'warn' : 'ok',
       `Pendientes: ${count}`);
 
-    if (count === 0) {
-      div.innerHTML = '<div class="empty"><span>✅</span>Sin solicitudes pendientes</div>';
+    if (div.innerHTML.trim() === '') {
+      div.innerHTML = '<div class="empty"><span>✅</span>Sin solicitudes activas</div>';
     }
 
     // Notificar si hay nuevos clientes pendientes
@@ -698,10 +732,21 @@ function iniciarListeners() {
       const estado = ch.estado || 'Desconectado';
       const hotel  = ch.hotel || '';
       const ubicacion = ch.ubicacion || null;
+      const ultimaConexion = ch.ultimaConexion || null;
+
+      // Detectar chofer desconectado: si ultimaConexion > 90s, marcar desconectado
+      let estadoReal = estado;
+      if (ultimaConexion && estado !== 'offline' && estado !== 'Desconectado') {
+        const diff = Date.now() - new Date(ultimaConexion).getTime();
+        if (diff > 90000) { // 90 segundos sin heartbeat
+          estadoReal = 'Desconectado';
+        }
+      }
+
       choferesDisponibles[id] = {
         ...(choferesDisponibles[id] || {}),
         nombre,
-        estado,
+        estado: estadoReal,
         hotel,
         ubicacion,
         viajeActual: ch.viajeActual || null
@@ -716,6 +761,13 @@ function iniciarListeners() {
       ubicacion: ch.ubicacion || null,
       viajeActual: ch.viajeActual || null
     }));
+
+    // Actualizar badge con conteo online/desconectados
+    const onlineCount = choferesLista.filter(c => /en linea|libre/i.test(c.estado)).length;
+    const ocupadosCount = choferesLista.filter(c => /ocupado/i.test(c.estado)).length;
+    const desconectadosCount = choferesLista.filter(c => /desconectado|offline/i.test(c.estado)).length;
+    setBadge('badge-choferes', choferesLista.length > 0 ? 'ok' : 'warn',
+      `Choferes: ${choferesLista.length} | 🟢${onlineCount} 🟡${ocupadosCount} 🔴${desconectadosCount}`);
 
     refrescarOpcionesHoteles();
     refrescarSelectPagos();
@@ -1416,9 +1468,13 @@ function renderizarChoferes() {
   });
 
   filtrados.forEach(ch => {
-    const dotClass = ch.estado.toLowerCase().includes('libre') ? 'libre'
-                   : ch.estado.toLowerCase().includes('ocupado') ? 'ocupado'
+    const estadoLower = ch.estado.toLowerCase();
+    const dotClass = (estadoLower.includes('en linea') || estadoLower.includes('libre')) ? 'libre'
+                   : estadoLower.includes('ocupado') ? 'ocupado'
                    : 'desconectado';
+    const estadoLabel = (estadoLower.includes('en linea') || estadoLower.includes('libre')) ? '🟢 En línea'
+                      : estadoLower.includes('ocupado') ? '🟡 Ocupado'
+                      : '🔴 Desconectado';
 
     div.innerHTML += `
       <div class="chofer-card">
@@ -1427,7 +1483,7 @@ function renderizarChoferes() {
           <div class="chofer-nombre">${escHtml(ch.nombre)}</div>
           <div class="chofer-id">ID: ${escHtml(ch.id)}</div>
           <div class="chofer-estado">
-            <span class="dot ${dotClass}"></span>${escHtml(ch.estado)}
+            <span class="dot ${dotClass}"></span>${estadoLabel}
           </div>
           <div class="chofer-hotel">🏨 Hotel: <b>${escHtml(ch.hotel || 'Sin asignar')}</b></div>
           ${ch.viajeActual ? `<div class="viaje-actual">🗺️ ${escHtml(ch.viajeActual)}</div>` : ''}
@@ -1443,7 +1499,11 @@ function renderizarChoferes() {
   const total = choferesLista.length;
   const visibles = filtrados.length;
   document.getElementById('cnt-choferes').textContent = visibles;
-  setBadge('badge-choferes', total > 0 ? 'ok' : 'warn', `Choferes: ${visibles}/${total}`);
+  const onlineC = filtrados.filter(c => /en linea|libre/i.test(c.estado)).length;
+  const ocupC = filtrados.filter(c => /ocupado/i.test(c.estado)).length;
+  const descC = filtrados.filter(c => /desconectado|offline/i.test(c.estado)).length;
+  setBadge('badge-choferes', total > 0 ? 'ok' : 'warn',
+    `Choferes: ${visibles} | 🟢${onlineC} 🟡${ocupC} 🔴${descC}`);
 
   if (visibles === 0) {
     div.innerHTML = '<div class="empty"><span>🏨</span>No hay choferes para este hotel</div>';
@@ -1634,6 +1694,103 @@ async function despachar(reservaID) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  REASIGNAR CHOFER — si el chofer anterior no contesta
+// ─────────────────────────────────────────────────────────────
+async function reasignarChofer(reservaID) {
+  const sel = document.getElementById(`sel-${reservaID}`);
+  if (!sel || !sel.value) {
+    showToast('⚠️ Selecciona un nuevo chofer para reasignar.', true);
+    return;
+  }
+
+  const nuevoChoferID = await asegurarChoferCanonico(sel.value);
+  const btn = sel.closest('.tarjeta').querySelector('.btn-despachar');
+  btn.disabled = true;
+  btn.textContent = 'Reasignando…';
+
+  try {
+    const snap = await db.ref('reservas/' + reservaID).once('value');
+    const datosViaje = snap.val();
+    if (!datosViaje) throw new Error('Reserva no encontrada');
+
+    const choferAnteriorID = datosViaje.chofer_id || datosViaje.chofer_asignado || '';
+    const choferAnteriorNombre = datosViaje.chofer_nombre || choferAnteriorID;
+
+    // Verificar que no se reasigne al mismo chofer
+    if (nuevoChoferID === normalizeChoferId(choferAnteriorID)) {
+      showToast('⚠️ Ese es el mismo chofer ya asignado. Elige otro.', true);
+      btn.disabled = false;
+      btn.textContent = 'REASIGNAR ↻';
+      return;
+    }
+
+    const choferSnap = await db.ref('choferes/' + nuevoChoferID).once('value');
+    const choferData = choferSnap.val() || {};
+    const nuevoChoferNombre = choferesDisponibles[nuevoChoferID]?.nombre || `Chofer ${nuevoChoferID}`;
+
+    // Liberar al chofer anterior (ponerlo en linea de nuevo)
+    if (choferAnteriorID) {
+      await db.ref('choferes/' + choferAnteriorID).update({
+        estado: 'en linea',
+        viajeActual: null,
+        ultimaConexion: new Date().toISOString()
+      });
+    }
+
+    // Crear viaje para el nuevo chofer
+    await db.ref('viajes/' + nuevoChoferID).push({
+      ...datosViaje,
+      estado: 'pendiente',
+      despachado_en: new Date().toISOString(),
+      reserva_id: reservaID,
+      reasignado_de: choferAnteriorID
+    });
+
+    // Actualizar la reserva con el nuevo chofer
+    await db.ref('reservas/' + reservaID).update({
+      estado: 'Asignado',
+      chofer_id: nuevoChoferID,
+      chofer_asignado: nuevoChoferID,
+      chofer_nombre: nuevoChoferNombre,
+      chofer_marca: choferData.vehiculo_marca || '',
+      chofer_modelo: choferData.vehiculo_modelo || '',
+      chofer_color: choferData.vehiculo_color || '',
+      chofer_placa: choferData.placa || '',
+      chofer_ubicacion_inicial: choferData.ubicacion || null,
+      chofer_ubicacion_aceptacion: null,
+      reasignacion_pendiente: false,
+      reasignacion_motivo: '',
+      reembolso_automatico: false,
+      reembolso_estado: '',
+      reasignado_de_chofer: choferAnteriorID,
+      reasignado_de_nombre: choferAnteriorNombre,
+      reasignado_en: new Date().toISOString(),
+      asignado_en: new Date().toISOString()
+    });
+
+    // Enviar push al nuevo chofer
+    let pushResult = null;
+    try {
+      pushResult = await enviarPushNuevoViajeChofer({
+        choferID: nuevoChoferID,
+        choferData,
+        reservaID,
+        datosViaje
+      });
+    } catch (pushErr) {
+      console.warn('No se pudo disparar el push al nuevo chofer', pushErr);
+    }
+
+    showToast(`↻ Viaje reasignado: ${choferAnteriorNombre} → ${nuevoChoferNombre}`);
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    btn.textContent = 'REASIGNAR ↻';
+    showToast('❌ Error al reasignar: ' + err.message, true);
+  }
+}
+
 async function asignarHotel(choferID) {
   choferID = await asegurarChoferCanonico(choferID);
   const actual = choferesDisponibles[choferID]?.hotel || '';
@@ -1684,6 +1841,76 @@ function showToast(msg, isError = false) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.className = 'toast'; }, 3500);
 }
+
+// ─────────────────────────────────────────────────────────────
+//  REFRESCAR MAPA — limpia todo y reconstruye
+// ─────────────────────────────────────────────────────────────
+function refrescarMapa() {
+  // Limpiar todos los marcadores de choferes
+  Object.keys(choferMapMarkers).forEach(id => {
+    choferMapMarkers[id].setMap(null);
+    delete choferMapMarkers[id];
+  });
+  // Limpiar todos los marcadores de clientes
+  Object.keys(clienteMapMarkers).forEach(id => {
+    clienteMapMarkers[id].setMap(null);
+    delete clienteMapMarkers[id];
+  });
+  // Limpiar todas las líneas
+  Object.keys(clienteChoferLineas).forEach(id => {
+    clienteChoferLineas[id].setMap(null);
+    delete clienteChoferLineas[id];
+  });
+  // Limpiar caches de rutas y geocoder
+  Object.keys(geocoderCache).forEach(k => delete geocoderCache[k]);
+  Object.keys(rutaClienteChoferCache).forEach(k => delete rutaClienteChoferCache[k]);
+  geocoderPendiente.clear();
+  rutaClienteChoferPendiente.clear();
+
+  // Reiniciar el mapa
+  if (mapChoferes) {
+    mapChoferes.setCenter({ lat: 19.4326, lng: -99.1332 });
+    mapChoferes.setZoom(11);
+  }
+
+  // Reconstruir mapa con datos actuales
+  actualizarMapaChoferes();
+  showToast('🔄 Mapa refrescado');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  REVISIÓN PERIÓDICA DE CHOFERES INACTIVOS (cada 60s)
+// ─────────────────────────────────────────────────────────────
+setInterval(() => {
+  if (!db) return;
+  // Re-leer choferes para recalcular estados de conexión
+  db.ref('choferes').once('value').then(snap => {
+    let changed = false;
+    snap.forEach(child => {
+      const ch = child.val();
+      const id = normalizeChoferId(child.key);
+      const estado = ch.estado || 'Desconectado';
+      const ultimaConexion = ch.ultimaConexion || null;
+
+      if (ultimaConexion && estado !== 'offline' && estado !== 'Desconectado') {
+        const diff = Date.now() - new Date(ultimaConexion).getTime();
+        if (diff > 90000 && choferesDisponibles[id]) {
+          choferesDisponibles[id].estado = 'Desconectado';
+          changed = true;
+        }
+      }
+    });
+    if (changed) {
+      choferesLista = Object.entries(choferesDisponibles).map(([id, ch]) => ({
+        id, nombre: ch.nombre || id, estado: ch.estado || 'Desconectado',
+        hotel: ch.hotel || '', ubicacion: ch.ubicacion || null,
+        viajeActual: ch.viajeActual || null
+      }));
+      renderizarChoferes();
+      actualizarMapaChoferes();
+    }
+  }).catch(() => {});
+}, 60000);
 </script>
 
 </body>
