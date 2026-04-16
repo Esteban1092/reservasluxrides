@@ -2171,6 +2171,147 @@ function iniciarSeguimientoCliente(reservaId){
   db.ref('reservas/' + reservaId).on('value', reservaStatusCallback);
 }
 
+// ── Persistencia en segundo plano (móvil) ──
+const LUXRIDES_FORM_STATE_KEY = 'luxrides_form_state';
+
+function guardarEstadoFormulario(){
+  try {
+    const state = {
+      servicio,
+      hSel,
+      pasajeros,
+      ampm,
+      tipoTraslado,
+      coordOrigen,
+      coordDestino,
+      resultado,
+      reservaActivaId,
+      choferLiveId,
+      autoCenterChofer,
+      reservaRatingValue,
+      inputs: {}
+    };
+    ['inp-nombre','inp-origen','inp-destino','inp-fecha','inp-hora','inp-min','inp-aerolinea','inp-vuelo','inp-vuelo-salida','inp-cliente-num'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) state.inputs[id] = el.value;
+    });
+    sessionStorage.setItem(LUXRIDES_FORM_STATE_KEY, JSON.stringify(state));
+  } catch(e) {
+    console.warn('No se pudo guardar estado del formulario:', e);
+  }
+}
+
+function restaurarEstadoFormulario(){
+  try {
+    const raw = sessionStorage.getItem(LUXRIDES_FORM_STATE_KEY);
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    if (!state) return false;
+
+    // Restaurar valores de inputs
+    if (state.inputs) {
+      Object.entries(state.inputs).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el && value != null) el.value = value;
+      });
+    }
+
+    // Restaurar configuración de servicio (setServicio/setTraslado llaman refreshRapidoUI
+    // que oculta resultados, pero los re-mostramos al final)
+    if (state.servicio) setServicio(state.servicio);
+    if (state.hSel) { hSel = state.hSel; buildHours(); }
+    if (state.pasajeros) { pasajeros = state.pasajeros; buildPax(); }
+    if (state.ampm) setAmpm(state.ampm);
+    if (state.tipoTraslado) setTraslado(state.tipoTraslado);
+
+    // Restaurar coordenadas
+    if (state.coordOrigen) coordOrigen = state.coordOrigen;
+    if (state.coordDestino) coordDestino = state.coordDestino;
+    if (state.autoCenterChofer !== undefined) autoCenterChofer = state.autoCenterChofer;
+    if (state.reservaRatingValue) reservaRatingValue = state.reservaRatingValue;
+
+    // Restaurar resultado al final (para que renderResults lo muestre
+    // incluso después de que refreshRapidoUI lo haya ocultado)
+    if (state.resultado) {
+      resultado = state.resultado;
+      renderResults();
+    }
+
+    console.log('Estado del formulario restaurado desde sessionStorage');
+    return true;
+  } catch(e) {
+    console.warn('No se pudo restaurar estado del formulario:', e);
+    return false;
+  }
+}
+
+function reconectarFirebase(){
+  if (!firebaseReady || !db) return;
+  try {
+    firebase.database().goOnline();
+    updateFirebaseStatus('ok', 'Firebase: reconectado');
+    console.log('Firebase reconectado tras volver del segundo plano');
+  } catch(e) {
+    console.warn('Error reconectando Firebase:', e);
+  }
+}
+
+function reanudarTrackingSiNecesario(){
+  const guardada = reservaActivaId || localStorage.getItem(RESERVA_ACTIVA_KEY);
+  if (!guardada || !db) return;
+
+  // Si el listener ya no está activo, reiniciar seguimiento completo
+  if (!reservaStatusCallback) {
+    iniciarSeguimientoCliente(guardada);
+    return;
+  }
+
+  // Forzar re-lectura para obtener el estado más reciente
+  db.ref('reservas/' + guardada).once('value').then(snap => {
+    if (reservaStatusCallback) reservaStatusCallback(snap);
+  }).catch(() => {});
+}
+
+// Guardar estado cuando la página pasa a segundo plano
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    guardarEstadoFormulario();
+  } else if (document.visibilityState === 'visible') {
+    // Reconectar Firebase y reanudar tracking al volver
+    reconectarFirebase();
+    reanudarTrackingSiNecesario();
+    // Reiniciar actualizaciones en vivo si estaban activas
+    if (resultado && servicio === 'I' && coordOrigen && coordDestino && directionsService) {
+      startLiveUpdates();
+    }
+  }
+});
+
+// Guardar estado también en pagehide (más fiable en iOS Safari)
+document.addEventListener('pagehide', () => {
+  guardarEstadoFormulario();
+});
+
+// Guardar estado periódicamente como respaldo (cada 10s)
+setInterval(guardarEstadoFormulario, 10000);
+
+// Monitorear conexión de Firebase
+(async function monitorFirebaseConnection(){
+  await firebaseInitPromise;
+  if (!db) return;
+  db.ref('.info/connected').on('value', (snap) => {
+    if (snap.val() === true) {
+      updateFirebaseStatus('ok', 'Firebase: activo');
+    } else {
+      updateFirebaseStatus('warn', 'Firebase: desconectado');
+    }
+  });
+})();
+
+// Restaurar estado del formulario si existe en sessionStorage
+restaurarEstadoFormulario();
+
+// Reanudar seguimiento de reserva activa
 (async function reanudarSeguimientoCliente(){
   await firebaseInitPromise;
   const guardada = localStorage.getItem(RESERVA_ACTIVA_KEY);
