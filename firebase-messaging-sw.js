@@ -1,0 +1,37 @@
+/* eslint-disable no-undef */
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyDlzuMEutA5yDZLpRG62WEuxBQmi6y_tq0",
+  authDomain: "luxridesreservas-d5102.firebaseapp.com",
+  databaseURL: "https://luxridesreservas-d5102-default-rtdb.firebaseio.com",
+  projectId: "luxridesreservas-d5102",
+  storageBucket: "luxridesreservas-d5102.firebasestorage.app",
+  messagingSenderId: "731425344327",
+  appId: "1:731425344327:web:3ef04d1320750cd6e6da62"
+});
+
+const messaging = firebase.messaging();
+
+// Esto permite que cuando llegue un push con la web cerrada/minimizada,
+// Android muestre una notificación del sistema.
+messaging.onBackgroundMessage((payload) => {
+  const data = payload?.data || {};
+  const title =
+    payload?.notification?.title ||
+    data.title ||
+    'LuxRides';
+
+  const body =
+    payload?.notification?.body ||
+    data.body ||
+    'Tienes una nueva actualización.';
+
+  self.registration.showNotification(title, {
+    body,
+    icon: data.icon || '/favicon.ico',
+    badge: data.badge || '/favicon.ico',
+    data: data
+  });
+});
