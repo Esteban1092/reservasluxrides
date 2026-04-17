@@ -308,7 +308,7 @@ async function showDashboard(code) {
 
   // NFC URL
   const baseUrl = location.origin + location.pathname.replace(/[^/]*$/, '');
-  document.getElementById('nfc-url').textContent = baseUrl + 'luxrides-concierge.html?c=' + encodeURIComponent(code);
+  document.getElementById('nfc-url').textContent = baseUrl + 'consieres.html?c=' + encodeURIComponent(code);
 
   // Cargar comisiones en tiempo real
   loadCommissions(code);
