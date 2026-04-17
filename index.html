@@ -431,7 +431,7 @@ let pasajeros = 1;
 let ampm      = 'AM';
 let tipoTraslado = 'N';
 
-// Concierge NFC referral — populated from ?concierge= URL param (NFC tags encode the URL)
+// Referido por conserje vía NFC — se llena con el parámetro ?concierge= de la URL (las etiquetas NFC codifican la URL de reserva)
 let conciergeId = null;
 (function leerConciergeDesdeURL() {
   const params = new URLSearchParams(window.location.search);
