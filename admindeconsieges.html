@@ -221,7 +221,7 @@
         const c = child.val() || {};
         const estado = c.estado || 'Activo';
         const badgeClass = estado === 'Activo' ? 'activo' : 'inactivo';
-        const nfcUrl = baseUrl + 'consieres.html?c=' + encodeURIComponent(id);
+        const nfcUrl = baseUrl + 'consierge.html?c=' + encodeURIComponent(id);
 
         div.innerHTML += `
           <div class="concierge-item">
