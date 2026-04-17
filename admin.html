@@ -194,6 +194,13 @@
     .totals-item span{display:block;color:var(--muted);font-size:0.76rem;margin-top:2px;}
     .totals-amount{font-weight:700;color:#86efac;white-space:nowrap;}
 
+    /* COMISIONES CONSERJES */
+    .comision-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card2);border:1px solid var(--border);border-left:3px solid rgba(212,175,55,0.75);border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+    .comision-item strong{display:block;color:var(--fg);font-size:0.9rem;}
+    .comision-item span{display:block;color:var(--muted);font-size:0.76rem;margin-top:2px;}
+    .comision-amount{font-weight:700;color:var(--gold);white-space:nowrap;}
+    .comision-select{flex:1;min-width:180px;background:#0f0f0f;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;}
+
     /* MENSAJES VACÍOS */
     .empty{
       text-align:center;padding:30px 10px;
@@ -347,6 +354,20 @@
     <div class="totals-list" id="lista-ganancias-choferes">
       <div class="history-empty">Cargando ganancias de todos los choferes...</div>
     </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-title">🏨 Comisiones de Conserjes (NFC)</div>
+  <div class="pay-head">
+    <select id="comision-conserje-select" class="comision-select" onchange="cargarComisionesConserje(this.value)">
+      <option value="">Selecciona conserje para ver comisiones</option>
+    </select>
+    <span class="pay-total" id="comision-total">Total a pagar: $0 MXN</span>
+    <button class="btn-small" type="button" onclick="borrarComisionesConserjeAdmin()">🗑️ Borrar comisiones</button>
+  </div>
+  <div class="history-list" id="comision-list">
+    <div class="history-empty">Elige un conserje para ver sus comisiones.</div>
   </div>
 </div>
 
@@ -1877,6 +1898,108 @@ function refrescarMapa() {
   actualizarMapaChoferes();
   showToast('🔄 Mapa refrescado');
 }
+
+// ─────────────────────────────────────────────────────────────
+//  COMISIONES DE CONSERJES (NFC)
+// ─────────────────────────────────────────────────────────────
+let comisionConserjeCallback = null;
+let comisionConserjeCurrentId = null;
+
+function cargarListaConserjes() {
+  if (!db) return;
+  db.ref('comisiones_conserjes').once('value').then(snap => {
+    const sel = document.getElementById('comision-conserje-select');
+    if (!sel) return;
+    const actual = sel.value;
+    sel.innerHTML = '<option value="">Selecciona conserje para ver comisiones</option>';
+    snap.forEach(child => {
+      const opt = document.createElement('option');
+      opt.value = child.key;
+      opt.textContent = child.key;
+      sel.appendChild(opt);
+    });
+    if (actual) sel.value = actual;
+  }).catch(() => {});
+}
+
+function cargarComisionesConserje(conciergeId) {
+  const list = document.getElementById('comision-list');
+  const totalEl = document.getElementById('comision-total');
+  if (!list || !totalEl) return;
+
+  if (!conciergeId) {
+    list.innerHTML = '<div class="history-empty">Elige un conserje para ver sus comisiones.</div>';
+    totalEl.textContent = 'Total a pagar: $0 MXN';
+    return;
+  }
+
+  if (comisionConserjeCallback && comisionConserjeCurrentId) {
+    db.ref('comisiones_conserjes/' + comisionConserjeCurrentId).off('value', comisionConserjeCallback);
+  }
+  comisionConserjeCurrentId = conciergeId;
+
+  comisionConserjeCallback = (snap) => {
+    list.innerHTML = '';
+    let totalComision = 0;
+    const items = [];
+    snap.forEach(child => items.push(child.val()));
+    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    items.forEach(c => {
+      const comision = Number(c.comision || 0);
+      totalComision += comision;
+      list.innerHTML += `
+        <div class="comision-item">
+          <div>
+            <strong>${escHtml(c.cliente || 'Cliente')}</strong>
+            <span>${escHtml(c.origen || '-')} ➔ ${escHtml(c.destino || '-')}</span>
+            <span>Fecha: ${escHtml(c.fecha || '-')} ${escHtml(c.hora || '')}</span>
+            <span>Viaje: $${Number(c.precio_viaje || 0).toLocaleString('es-MX')} MXN · ${c.porcentaje || 10}% comisión</span>
+          </div>
+          <div class="comision-amount">$${comision.toLocaleString('es-MX')} MXN</div>
+        </div>
+      `;
+    });
+
+    if (!items.length) {
+      list.innerHTML = '<div class="history-empty">Sin comisiones registradas para este conserje.</div>';
+    }
+    totalEl.textContent = `Total a pagar: $${totalComision.toLocaleString('es-MX')} MXN`;
+  };
+
+  db.ref('comisiones_conserjes/' + conciergeId).on('value', comisionConserjeCallback);
+}
+
+async function borrarComisionesConserjeAdmin() {
+  const sel = document.getElementById('comision-conserje-select');
+  const conciergeId = sel?.value || '';
+  if (!conciergeId) {
+    showToast('⚠️ Selecciona un conserje primero.', true);
+    return;
+  }
+
+  const ok = window.confirm(`¿Borrar TODAS las comisiones de ${conciergeId}? Esta acción no se puede deshacer.`);
+  if (!ok) return;
+
+  try {
+    await db.ref('comisiones_conserjes/' + conciergeId).remove();
+    showToast(`🗑️ Comisiones borradas para ${conciergeId}`);
+    cargarListaConserjes();
+    cargarComisionesConserje('');
+    if (sel) sel.value = '';
+  } catch (err) {
+    console.error(err);
+    showToast('❌ No se pudo borrar las comisiones: ' + err.message, true);
+  }
+}
+
+// Cargar lista de conserjes al iniciar Firebase
+(async () => {
+  await initFirebase;
+  cargarListaConserjes();
+  db.ref('comisiones_conserjes').on('child_added', () => cargarListaConserjes());
+  db.ref('comisiones_conserjes').on('child_removed', () => cargarListaConserjes());
+})();
 
 // ─────────────────────────────────────────────────────────────
 //  REVISIÓN PERIÓDICA DE CHOFERES INACTIVOS (cada 60s)

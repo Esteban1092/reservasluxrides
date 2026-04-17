@@ -1257,17 +1257,37 @@
       try {
         const precio = Number(viajeActual.total || viajeActual.precio || 0);
         const pago_chofer = obtenerPagoChofer(viajeActual);
+        const comision_conserje = viajeActual.concierge_id ? Math.round(precio * 0.10) : 0;
         await db.ref('historial/' + choferID).push({
           cliente: viajeActual.cliente || 'Cliente',
           origen: viajeActual.origen || '-',
           destino: viajeActual.destino || '-',
           precio,
           pago_chofer,
+          concierge_id: viajeActual.concierge_id || null,
+          comision_conserje: viajeActual.concierge_id ? comision_conserje : null,
           estado: 'completado',
           fecha: new Date().toLocaleDateString(),
           hora: new Date().toLocaleTimeString(),
           timestamp: Date.now()
         });
+
+        if (viajeActual.concierge_id && comision_conserje > 0) {
+          await db.ref('comisiones_conserjes/' + viajeActual.concierge_id).push({
+            concierge_id: viajeActual.concierge_id,
+            reserva_id: viajeActual.reserva_id || null,
+            cliente: viajeActual.cliente || 'Cliente',
+            origen: viajeActual.origen || '-',
+            destino: viajeActual.destino || '-',
+            precio_viaje: precio,
+            comision: comision_conserje,
+            porcentaje: 10,
+            chofer_id: choferID,
+            fecha: new Date().toLocaleDateString(),
+            hora: new Date().toLocaleTimeString(),
+            timestamp: Date.now()
+          });
+        }
 
         if (viajeActual.reserva_id) {
           await db.ref('reservas/' + viajeActual.reserva_id).update({
