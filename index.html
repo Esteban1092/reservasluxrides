@@ -1591,6 +1591,24 @@ async function guardarReserva(){
   const salidaVuelo = document.getElementById('inp-vuelo-salida').value.trim();
   const numeroCliente = document.getElementById('inp-cliente-num').value.trim();
 
+  // Leer referencia de concierge (NFC) — solo válida si escaneó la tarjeta hace menos de 2 horas
+  let conciergeCode = null;
+  const CONCIERGE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 horas
+  try {
+    const conciergeRef = localStorage.getItem('luxrides_concierge_ref');
+    if (conciergeRef) {
+      const parsed = JSON.parse(conciergeRef);
+      if (parsed && parsed.code && parsed.ts) {
+        const age = Date.now() - parsed.ts;
+        if (age >= 0 && age <= CONCIERGE_MAX_AGE_MS) {
+          conciergeCode = parsed.code;
+        }
+      }
+      // Siempre borrar después de leer — un solo uso por escaneo NFC
+      localStorage.removeItem('luxrides_concierge_ref');
+    }
+  } catch (_) {}
+
   const reserva = {
     timestamp: new Date().toISOString(),
     cliente: nombre,
@@ -1619,6 +1637,7 @@ async function guardarReserva(){
     calificacion_cliente: null,
     opinion_cliente: '',
     estado: 'Pendiente',
+    concierge_code: conciergeCode,
     cliente_fcm_token: clientFcmToken || null,
     cliente_fcm_updated: clientFcmToken ? new Date().toISOString() : null
   };
