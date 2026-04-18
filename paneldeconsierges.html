@@ -414,10 +414,14 @@ function renderCommissions(data) {
   const tbody = document.getElementById('commissions-body');
   const emptyEl = document.getElementById('empty-state');
   tbody.innerHTML = '';
+  console.log('[DEBUG] renderCommissions llamada. Data:', data);
 
-  if (!data) {
+  if (!data || Object.keys(data).length === 0) {
     emptyEl.style.display = '';
+    tbody.innerHTML = '';
     updateStats(0, 0, 0);
+    // Forzar mensaje visible
+    console.log('[DEBUG] No hay datos de reservas para este concierge. Mostrando mensaje vacío.');
     return;
   }
 
