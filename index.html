@@ -1591,11 +1591,10 @@ async function guardarReserva(){
   const salidaVuelo = document.getElementById('inp-vuelo-salida').value.trim();
   const numeroCliente = document.getElementById('inp-cliente-num').value.trim();
 
-  // Leer referencia de concierge (NFC o URL)
+  // Leer referencia de concierge SOLO desde NFC (localStorage)
   let conciergeCode = null;
   const CONCIERGE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 horas
   try {
-    // 1. Intentar desde localStorage (NFC)
     const conciergeRef = localStorage.getItem('luxrides_concierge_ref');
     if (conciergeRef) {
       const parsed = JSON.parse(conciergeRef);
@@ -1609,15 +1608,6 @@ async function guardarReserva(){
       localStorage.removeItem('luxrides_concierge_ref');
     }
   } catch (_) {}
-
-  // 2. Si no hay conciergeCode, intentar desde la URL
-  if (!conciergeCode) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeFromUrl = urlParams.get('concierge') || urlParams.get('concierge_code');
-    if (codeFromUrl) {
-      conciergeCode = codeFromUrl;
-    }
-  }
 
   const reserva = {
     timestamp: new Date().toISOString(),
@@ -1647,7 +1637,8 @@ async function guardarReserva(){
     calificacion_cliente: null,
     opinion_cliente: '',
     estado: 'Pendiente',
-    concierge_code: conciergeCode || null,
+    // concierge_code solo si viene del NFC
+    ...(conciergeCode ? { concierge_code: conciergeCode } : {}),
     cliente_fcm_token: clientFcmToken || null,
     cliente_fcm_updated: clientFcmToken ? new Date().toISOString() : null
   };
@@ -2695,3 +2686,32 @@ document.addEventListener("touchend", () => {
 <script>
 if (location.protocol === 'file:') {
   console.warn('Ejecutando desde file://. Google Maps y Firebase pueden fallar por restricciones de origen.');
+}
+
+window.gm_authFailure = function() {
+  const hostInfo = `${location.origin}${location.pathname}`;
+  activarModoSinGoogle();
+  alert(`Google Maps rechazó la API key.\n\nOrigen actual: ${hostInfo}\n\nAgrega este dominio en HTTP referrers de tu API key y verifica facturación + APIs habilitadas.`);
+};
+
+(function loadGoogleMaps(){
+  updateMapsStatus('', 'Mapas: cargando...');
+  const script = document.createElement('script');
+  script.async = true;
+  script.defer = true;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+  script.onerror = function(){
+    activarModoSinGoogle();
+    alert('No se pudo cargar Google Maps. Verifica internet y la configuración de la API key.');
+  };
+  document.body.appendChild(script);
+})();
+
+setTimeout(() => {
+  if (!(window.google && google.maps && google.maps.places)) {
+    activarModoSinGoogle();
+  }
+}, 3500);
+</script>
+</body>
+</html>
