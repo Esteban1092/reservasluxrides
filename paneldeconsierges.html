@@ -297,7 +297,7 @@ async function loginConcierge() {
 
   // Verificar que el concierge existe y la contraseña coincide
   try {
-    const snap = await db.ref('conserjes/' + code).once('value');
+    const snap = await db.ref('concierges/' + code).once('value');
     if (!snap.exists()) {
       errEl.textContent = 'Código no encontrado. Contacta al administrador.';
       return;
@@ -343,7 +343,7 @@ async function showDashboard(code) {
   let nombre = code;
   let hotel = '';
   try {
-    const infoSnap = await db.ref('conserjes/' + code).once('value');
+    const infoSnap = await db.ref('concierges/' + code).once('value');
     const info = infoSnap.val() || {};
     nombre = info.nombre || code;
     hotel = info.hotel || '';
