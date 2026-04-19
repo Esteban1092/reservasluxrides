@@ -357,12 +357,16 @@
       if (!('serviceWorker' in navigator)) return null;
       if (driverServiceWorkerRegistration) return driverServiceWorkerRegistration;
 
-      try {
-        driverServiceWorkerRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-        return driverServiceWorkerRegistration;
-      } catch (_) {
-        return null;
-      }
+        try {
+          driverServiceWorkerRegistration = await navigator.serviceWorker.register('./choferes-messaging-sw.js');
+          // Precachear sonidos al instalar
+          if (driverServiceWorkerRegistration.active) {
+            driverServiceWorkerRegistration.active.postMessage({ type: 'CACHE_NOTIFICATION_SOUNDS' });
+          }
+          return driverServiceWorkerRegistration;
+        } catch (_) {
+          return null;
+        }
     }
 
     function construirViajeDesdePayload(payload) {
@@ -1550,7 +1554,7 @@
           map,
           position: pickupLoc,
           title: 'Recogida del cliente',
-          icon: createStopIcon('pickup')
+          icon: createStopIcon('pickup') 
         });
       }
 
