@@ -387,31 +387,6 @@
         viajeEmergenteActual = viaje;
         reproducirTonoNuevoViaje();
       });
-
-        // Escuchar mensajes del service worker para reproducir sonido personalizado
-        if (navigator.serviceWorker && navigator.serviceWorker.addEventListener) {
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
-              let audioUrl = '/notificacion.mp3';
-              if (event.data.sound === 'spiderman') {
-                audioUrl = '/spiderman_theme_song.mp3';
-              }
-              try {
-                if (ringtoneAudio) {
-                  ringtoneAudio.pause();
-                  ringtoneAudio = null;
-                }
-                ringtoneAudio = new Audio(audioUrl);
-                ringtoneAudio.volume = 1;
-                ringtoneAudio.loop = false;
-                ringtoneAudio.play().catch(() => {});
-              } catch (_) {}
-              if (navigator.vibrate) {
-                navigator.vibrate([400, 180, 400, 180, 700]);
-              }
-            }
-          });
-        }
     }
 
     async function activarNotificacionesPushChofer() {
