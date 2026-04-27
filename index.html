@@ -1697,9 +1697,6 @@ async function guardarReserva(){
 
 async function enviarWhatsApp(){
   if(!resultado) return;
-  const esMovil = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
-  // En desktop abrimos una ventana inmediata para evitar bloqueadores tras awaits.
-  const waWindow = esMovil ? null : window.open('about:blank','_blank','noopener,noreferrer');
   const guardadoInfo = await guardarReserva();
   if (guardadoInfo?.ok && guardadoInfo?.reservaId) {
     iniciarSeguimientoCliente(guardadoInfo.reservaId);
@@ -1753,9 +1750,39 @@ async function enviarWhatsApp(){
     `💰 *TOTAL: $${resultado.totalPrecio.toLocaleString()} MXN*`,
   ].filter(l=>l!=='').join('\n');
 
-  const numeroCentral = normalizarNumeroWhatsApp(WHATSAPP_CENTRAL);
-  const encodedText = encodeURIComponent(lines);
-  abrirWhatsAppSeguro(numeroCentral, encodedText, waWindow);
+  // Copiar al portapapeles y mostrar notificación
+  try {
+    await navigator.clipboard.writeText(lines);
+    mostrarNotificacionWhatsApp('Mensaje copiado al portapapeles. Pega el mensaje en WhatsApp para enviarlo.');
+  } catch (e) {
+    alert('No se pudo copiar el mensaje al portapapeles. Copia manualmente el mensaje que aparecerá a continuación.\n\n' + lines);
+  }
+}
+
+// Notificación visual para WhatsApp
+function mostrarNotificacionWhatsApp(msg) {
+  let div = document.getElementById('wa-copied-msg');
+  if (!div) {
+    div = document.createElement('div');
+    div.id = 'wa-copied-msg';
+    div.style.position = 'fixed';
+    div.style.bottom = '32px';
+    div.style.left = '50%';
+    div.style.transform = 'translateX(-50%)';
+    div.style.background = '#25D366';
+    div.style.color = '#fff';
+    div.style.fontSize = '1rem';
+    div.style.fontFamily = 'Outfit,sans-serif';
+    div.style.padding = '16px 32px';
+    div.style.borderRadius = '12px';
+    div.style.boxShadow = '0 4px 24px rgba(0,0,0,0.12)';
+    div.style.zIndex = '99999';
+    div.style.textAlign = 'center';
+    document.body.appendChild(div);
+  }
+  div.textContent = msg;
+  div.style.display = 'block';
+  setTimeout(() => { div.style.display = 'none'; }, 3500);
 }
 
 async function obtenerInfoChoferParaWhatsApp(reservaId){
