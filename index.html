@@ -206,6 +206,11 @@ select{padding-left:12px;padding-right:12px;}
       <span id="status-firebase" class="status-pill">Firebase: iniciando...</span>
     </div>
 
+    <div id="concierge-badge" style="display:none;margin-bottom:12px;padding:10px 12px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.55);border-radius:8px;font-size:0.82rem;color:#7a5d10;align-items:center;gap:8px;">
+      <span style="font-size:1.1rem;">🏨</span>
+      <span>Referido por conserje: <b id="concierge-nombre"></b></span>
+    </div>
+
     <div class="field">
       <label class="lbl">Modo de Búsqueda</label>
       <div class="btn-row" id="search-mode-row">
@@ -446,6 +451,21 @@ let hSel      = 2;
 let pasajeros = 1;
 let ampm      = 'AM';
 let tipoTraslado = 'N';
+
+// Referido por conserje vía NFC — se llena con el parámetro ?concierge= de la URL (las etiquetas NFC codifican la URL de reserva)
+let conciergeId = null;
+(function leerConciergeDesdeURL() {
+  const params = new URLSearchParams(window.location.search);
+  const c = (params.get('concierge') || '').trim();
+  if (!c) return;
+  conciergeId = c;
+  const badge = document.getElementById('concierge-badge');
+  const nombre = document.getElementById('concierge-nombre');
+  if (badge && nombre) {
+    nombre.textContent = c;
+    badge.style.display = 'flex';
+  }
+})();
 
 let coordOrigen  = null;
 let coordDestino = null;
@@ -1661,7 +1681,8 @@ async function guardarReserva(){
     // concierge_code solo si viene del NFC
     ...(conciergeCode ? { concierge_code: conciergeCode } : {}),
     cliente_fcm_token: clientFcmToken || null,
-    cliente_fcm_updated: clientFcmToken ? new Date().toISOString() : null
+    cliente_fcm_updated: clientFcmToken ? new Date().toISOString() : null,
+    concierge_id: conciergeId || null
   };
 
   // Intento 1: SDK de Firebase (rápido y nativo)
