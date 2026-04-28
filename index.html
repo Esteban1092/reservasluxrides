@@ -6,61 +6,156 @@
   <title>Luxrides VIP</title>
   <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
   <style>
+        .minimizar-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #fff;
+          border: 1.5px solid #1a237e;
+          color: #1a237e;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          font-size: 1.3em;
+          font-weight: bold;
+          cursor: pointer;
+          z-index: 20;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          transition: background 0.2s, color 0.2s;
+        }
+        .minimizar-btn:hover {
+          background: #1a237e;
+          color: #fff;
+        }
+        .mostrar-panel-btn {
+          position: fixed;
+          top: 20px;
+          left: 20px;
+          z-index: 30;
+          background: #1a237e;
+          color: #fff;
+          border: none;
+          border-radius: 50%;
+          width: 48px;
+          height: 48px;
+          font-size: 2em;
+          font-weight: bold;
+          box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+          cursor: pointer;
+          display: none;
+          align-items: center;
+          justify-content: center;
+        }
+        .mostrar-panel-btn.visible {
+          display: flex;
+        }
     body {
       font-family: 'Montserrat', Arial, sans-serif;
       margin: 0;
       padding: 0;
       background: #f5f6fa;
       color: #222;
+      overflow: hidden;
+    }
+    #map {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
     }
     .container {
-      max-width: 500px;
-      margin: 20px auto;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      padding: 24px 18px 32px 18px;
+      position: fixed;
+      top: 40px;
+      left: 40px;
+      width: 370px;
+      max-width: 90vw;
+      background: linear-gradient(135deg, #181818 80%, #bfa046 100%);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      padding: 28px 18px 32px 18px;
+      z-index: 10;
+      cursor: move;
+      transition: box-shadow 0.2s;
+      color: #fff;
+      border: 2px solid #bfa046;
+    }
+    .container:active {
+      box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+    }
+    .logo-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .logo-title img {
+      height: 48px;
+      width: auto;
+      display: block;
+      filter: brightness(0) invert(1);
+    }
+    .logo-title span {
+      font-size: 2.1em;
+      font-weight: 700;
+      color: #bfa046;
+      letter-spacing: 1px;
+      font-family: 'Montserrat', Arial, sans-serif;
     }
     h1 {
       text-align: center;
       color: #1a237e;
       margin-bottom: 10px;
     }
-    .top-buttons {
+    .bottom-buttons {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-bottom: 18px;
+      margin-top: 18px;
     }
-    .top-buttons a, .top-buttons button {
-      background: #1a237e;
-      color: #fff;
+    .bottom-buttons a, .bottom-buttons button {
+      background: #bfa046;
+      color: #181818;
       border: none;
       border-radius: 8px;
       padding: 12px;
       font-size: 1rem;
       text-align: center;
       text-decoration: none;
-      transition: background 0.2s;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      transition: background 0.2s, color 0.2s;
       cursor: pointer;
+      box-shadow: 0 2px 8px rgba(191,160,70,0.08);
     }
-    .top-buttons a:hover, .top-buttons button:hover {
-      background: #3949ab;
+    .bottom-buttons a:hover, .bottom-buttons button:hover {
+      background: #fff;
+      color: #bfa046;
     }
     label {
       display: block;
       margin-top: 14px;
       margin-bottom: 4px;
       font-weight: 600;
+      color: #bfa046;
+      letter-spacing: 0.5px;
     }
     input, select, .google-places-input {
       width: 100%;
       padding: 10px;
       border-radius: 6px;
-      border: 1px solid #bdbdbd;
+      border: 1px solid #bfa046;
       margin-bottom: 8px;
       font-size: 1rem;
       box-sizing: border-box;
+      background: #232323;
+      color: #fff;
+    }
+    input::placeholder, .google-places-input::placeholder {
+      color: #bfa046;
+      opacity: 0.8;
     }
     .service-type-note {
       font-size: 0.9em;
@@ -124,23 +219,32 @@
     }
     @media (max-width: 600px) {
       .container {
-        max-width: 100vw;
-        border-radius: 0;
-        box-shadow: none;
-        padding: 12px 4px 24px 4px;
+        width: 98vw;
+        left: 1vw;
+        top: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+        padding: 10px 2vw 18px 2vw;
       }
       #map {
-        height: 160px;
+        width: 100vw;
+        height: 100vh;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Luxrides VIP</h1>
-    <div class="top-buttons">
-      <a href="https://linkdenegocio.mx/Luxridesreservas.com" target="_blank">Pagar con Clip</a>
-      <button id="whatsapp-btn" type="button">Confirmar por WhatsApp</button>
+  <button id="mostrar-panel-btn" class="mostrar-panel-btn" title="Mostrar reserva">📝</button>
+  <div class="container" id="reserva-panel">
+    <button class="minimizar-btn" id="minimizar-btn" title="Minimizar">–</button>
+    <div class="logo-title">
+      <img src="logo-luxrides.png" alt="Logo Luxrides" />
+      <span>Luxrides VIP</span>
+    </div>
+    <!-- Nota de pago importante -->
+    <div style="background:#232323;border:2px solid #bfa046;color:#bfa046;padding:14px 12px 10px 12px;border-radius:10px;margin-bottom:18px;font-weight:600;">
+      <span style="font-size:1.1em;">IMPORTANTE:</span> La asignación de su conductor se realizará durante el proceso de pago.<br>
+      Agradecemos incluir el nombre del usuario en el concepto del pago.
     </div>
     <form id="reserva-form" autocomplete="off">
       <label for="usuario">Nombre de usuario</label>
@@ -151,7 +255,10 @@
         <option value="tiempo">Por tiempo</option>
         <option value="km">Por kilometraje</option>
       </select>
-      <div id="nota-tiempo" class="service-type-note" style="display:none;">Solo se harán servicios por tiempo.</div>
+      <div id="nota-tiempo" class="service-type-note" style="display:none;">
+        Solo se harán servicios por tiempo.<br>
+        <b>Nota:</b> El servicio por tiempo tiene prioridad y solo se aceptan reservas bajo esta modalidad.
+      </div>
 
       <div id="horas-servicio-container">
         <label for="horas-servicio">Horas de servicio (2-12)</label>
@@ -162,7 +269,7 @@
       <input id="origen" class="google-places-input" placeholder="Ej: Hotel, aeropuerto, calle..." required>
 
       <div class="paradas-list" id="paradas-list"></div>
-      <button type="button" id="agregar-parada">Agregar parada</button>
+      <button type="button" id="agregar-parada" style="background:#bfa046;color:#181818;font-weight:700;">Agregar parada</button>
 
       <label for="destino">Destino final</label>
       <input id="destino" class="google-places-input" placeholder="Ej: Hotel, aeropuerto, calle..." required>
@@ -182,8 +289,12 @@
 
       <div id="map"></div>
 
-      <button type="button" id="calcular-precio">Calcular precio</button>
+      <button type="button" id="calcular-precio" style="background:#232323;color:#bfa046;font-weight:700;">Calcular precio</button>
       <div class="precio" id="precio"></div>
+      <div class="bottom-buttons">
+        <a href="https://linkdenegocio.mx/Luxridesreservas.com" target="_blank">Pagar con Clip</a>
+        <button id="whatsapp-btn" type="button">Confirmar por WhatsApp</button>
+      </div>
     </form>
   </div>
 
@@ -209,6 +320,46 @@
   </script>
 
   <script>
+            // --- Minimizar/mostrar panel ---
+            const panel = document.getElementById('reserva-panel');
+            const minimizarBtn = document.getElementById('minimizar-btn');
+            const mostrarPanelBtn = document.getElementById('mostrar-panel-btn');
+            minimizarBtn.onclick = function(e) {
+              e.stopPropagation();
+              panel.style.display = 'none';
+              mostrarPanelBtn.classList.add('visible');
+            };
+            mostrarPanelBtn.onclick = function() {
+              panel.style.display = '';
+              mostrarPanelBtn.classList.remove('visible');
+            };
+        // --- Hacer el panel movible ---
+        (function() {
+          const panel = document.getElementById('reserva-panel');
+          let isDragging = false, startX, startY, startLeft, startTop;
+          panel.addEventListener('mousedown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = panel.offsetLeft;
+            startTop = panel.offsetTop;
+            panel.style.transition = 'none';
+          });
+          document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+            let newLeft = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, startLeft + dx));
+            let newTop = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, startTop + dy));
+            panel.style.left = newLeft + 'px';
+            panel.style.top = newTop + 'px';
+          });
+          document.addEventListener('mouseup', function() {
+            isDragging = false;
+            panel.style.transition = '';
+          });
+        })();
     // --- Google Maps y Autocompletado ---
     let map, origenAutocomplete, destinoAutocomplete, paradaAutocompletes = [];
     let paradas = [];
@@ -281,6 +432,18 @@
       // Simulación de distancia (en km) para demo
       let distancia = Math.floor(Math.random() * 30) + 5; // 5 a 35 km
       let precio = 0;
+      const origen = document.getElementById('origen').value.trim().toLowerCase();
+      const destino = document.getElementById('destino').value.trim().toLowerCase();
+      // Condición especial Camino Real Polanco a Terminal 2
+      if (
+        (origen.includes('camino real polanco') &&
+         (destino.includes('terminal 2') || destino.includes('terminal dos')) &&
+         (destino.includes('benito juárez') || destino.includes('aeropuerto') || destino.includes('mexico')))
+      ) {
+        precio = 630;
+        document.getElementById('precio').innerText = `Precio especial: $${precio} MXN (Camino Real Polanco → Terminal 2)`;
+        return;
+      }
       if (tipoVehiculo === 'carro') {
         if (distancia <= 4) precio = 240;
         else precio = 240 + (distancia - 4) * 30;
