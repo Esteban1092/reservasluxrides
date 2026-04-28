@@ -175,12 +175,12 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
 .rating-box{display:none;margin-top:12px;padding:12px;border:1px solid rgba(212,175,55,0.45);background:rgba(255,255,255,0.72);border-radius:10px;}
 .rating-title{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:#7a5d10;margin-bottom:10px;}
 .rating-stars{display:flex;gap:8px;justify-content:center;margin-bottom:10px;}
-.star-btn{flex:1;max-width:48px;padding:10px 0;border:1px solid rgba(212,175,55,0.45);background:rgba(255,255,255,0.85);color:#b68b10;font-size:1.25rem;cursor:pointer;border-radius:10px;}
-.star-btn.active{background:rgba(212,175,55,0.18);border-color:var(--gold);color:#7a5d10;}
-.rating-box textarea{width:100%;min-height:78px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#1a1a1a;font-family:'Outfit',sans-serif;font-size:0.88rem;resize:vertical;}
-.rating-actions{display:flex;justify-content:flex-end;margin-top:10px;}
-.btn-rating{border:none;background:var(--gold);color:#050505;padding:11px 14px;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;cursor:pointer;}
-.rating-status{margin-top:8px;font-size:0.82rem;color:#7a5d10;min-height:18px;}
+.star-btn{flex:1;max-width:48px;padding:10px 0;border:1.5px solid #D4AF37;background:rgba(255,255,255,0.08);color:#D4AF37;font-size:1.35rem;cursor:pointer;border-radius:10px;transition:background .2s, color .2s;}
+.star-btn.active{background:#D4AF37;color:#181818;}
+.rating-box textarea{width:100%;min-height:78px;padding:10px 12px;border:1.5px solid #D4AF37;border-radius:8px;background:#181818;color:#fff;font-family:'Outfit',sans-serif;font-size:0.98rem;resize:vertical;margin-bottom:10px;}
+.rating-actions{display:flex;justify-content:center;margin-top:10px;}
+.btn-rating{border:none;background:#D4AF37;color:#181818;padding:11px 24px;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;cursor:pointer;font-size:1.05rem;}
+.rating-status{margin-top:8px;font-size:0.95rem;color:#D4AF37;min-height:18px;text-align:center;}
 .sugg-box{
   display:none;
   position:absolute;
@@ -647,6 +647,54 @@ const MEXICO_KEYWORD_PLACES = [
   { label: 'Valladolid, Yucatan, Mexico', lat: 20.6906, lon: -88.2019, keywords: ['valladolid yucatan'] },
   { label: 'Zacatecas, Zacatecas, Mexico', lat: 22.7709, lon: -102.5832, keywords: ['zacatecas'] },
   { label: 'Fresnillo, Zacatecas, Mexico', lat: 23.1753, lon: -102.8692, keywords: ['fresnillo'] }
+];a
+
+const MEXICO_GOLF_CLUBS = [
+  { label: 'Club de Golf Chapultepec, Naucalpan, Estado de Mexico, Mexico', lat: 19.4356, lon: -99.2403, keywords: ['club de golf chapultepec', 'chapultepec golf', 'naucalpan golf'] },
+  { label: 'Club de Golf Mexico, Tlalpan, Ciudad de Mexico, Mexico', lat: 19.2917, lon: -99.1443, keywords: ['club de golf mexico', 'golf mexico cdmx'] },
+  { label: 'Club de Golf Bellavista, Atizapan, Estado de Mexico, Mexico', lat: 19.5510, lon: -99.2412, keywords: ['club de golf bellavista', 'bellavista golf'] },
+  { label: 'Club de Golf La Hacienda, Atizapan, Estado de Mexico, Mexico', lat: 19.5440, lon: -99.2534, keywords: ['club de golf la hacienda', 'hacienda golf atizapan'] },
+  { label: 'Lomas Country Club, Huixquilucan, Estado de Mexico, Mexico', lat: 19.4092, lon: -99.2862, keywords: ['lomas country', 'lomas country club', 'interlomas golf'] },
+  { label: 'Club Campestre de la Ciudad de Mexico, Coyoacan, Ciudad de Mexico, Mexico', lat: 19.3069, lon: -99.1278, keywords: ['club campestre cdmx', 'campestre ciudad de mexico'] },
+  { label: 'Bosque Real Country Club, Huixquilucan, Estado de Mexico, Mexico', lat: 19.3961, lon: -99.3033, keywords: ['bosque real', 'bosque real country club'] },
+  { label: 'El Cielo Country Club, Tlajomulco, Jalisco, Mexico', lat: 20.5695, lon: -103.4429, keywords: ['el cielo country club', 'golf tlajomulco'] },
+  { label: 'Club de Golf Santa Anita, Tlajomulco, Jalisco, Mexico', lat: 20.5283, lon: -103.4535, keywords: ['club de golf santa anita', 'santa anita golf'] },
+  { label: 'Atlas Country Club, Guadalajara, Jalisco, Mexico', lat: 20.6294, lon: -103.3352, keywords: ['atlas country club', 'atlas golf guadalajara'] },
+  { label: 'Guadalajara Country Club, Guadalajara, Jalisco, Mexico', lat: 20.7043, lon: -103.3660, keywords: ['guadalajara country club', 'golf guadalajara'] },
+  { label: 'Club de Golf Valle Alto, Monterrey, Nuevo Leon, Mexico', lat: 25.5653, lon: -100.2786, keywords: ['valle alto golf', 'club de golf valle alto'] },
+  { label: 'Campestre Monterrey, Monterrey, Nuevo Leon, Mexico', lat: 25.6468, lon: -100.3252, keywords: ['campestre monterrey', 'club campestre monterrey'] },
+  { label: 'Las Misiones Club Campestre, Santiago, Nuevo Leon, Mexico', lat: 25.3977, lon: -100.1652, keywords: ['las misiones golf', 'club campestre las misiones'] },
+  { label: 'Club de Golf La Herradura, Monterrey, Nuevo Leon, Mexico', lat: 25.7037, lon: -100.3388, keywords: ['la herradura golf monterrey', 'club de golf la herradura'] },
+  { label: 'Club Campestre de Puebla, Puebla, Puebla, Mexico', lat: 19.0064, lon: -98.2262, keywords: ['campestre puebla', 'club campestre de puebla'] },
+  { label: 'La Vista Country Club, Puebla, Puebla, Mexico', lat: 19.0074, lon: -98.2431, keywords: ['la vista country club', 'la vista golf puebla'] },
+  { label: 'Club de Golf Las Fuentes, Puebla, Puebla, Mexico', lat: 19.0702, lon: -98.1809, keywords: ['las fuentes golf puebla', 'club de golf las fuentes'] },
+  { label: 'Club de Golf El Cristo, Atlixco, Puebla, Mexico', lat: 18.8987, lon: -98.4365, keywords: ['el cristo golf', 'atlixco golf'] },
+  { label: 'Club de Golf San Carlos, Metepec, Estado de Mexico, Mexico', lat: 19.2605, lon: -99.6122, keywords: ['san carlos golf metepec', 'club de golf san carlos'] },
+  { label: 'Club de Golf Malinalco, Malinalco, Estado de Mexico, Mexico', lat: 18.9553, lon: -99.5048, keywords: ['malinalco golf', 'club de golf malinalco'] },
+  { label: 'Club de Golf Amanali, Tepeji del Rio, Hidalgo, Mexico', lat: 19.9172, lon: -99.3494, keywords: ['amanali', 'club de golf amanali', 'tepeji golf'] },
+  { label: 'Club Campestre Pachuca, Pachuca, Hidalgo, Mexico', lat: 20.1106, lon: -98.7526, keywords: ['campestre pachuca', 'club campestre pachuca'] },
+  { label: 'Club de Golf Cuernavaca, Cuernavaca, Morelos, Mexico', lat: 18.9247, lon: -99.2382, keywords: ['club de golf cuernavaca', 'golf cuernavaca'] },
+  { label: 'Club de Golf Los Tabachines, Cuernavaca, Morelos, Mexico', lat: 18.9340, lon: -99.2246, keywords: ['los tabachines', 'tabachines golf'] },
+  { label: 'Club de Golf Santa Fe, Xochitepec, Morelos, Mexico', lat: 18.8037, lon: -99.2332, keywords: ['santa fe golf morelos', 'club de golf santa fe'] },
+  { label: 'Yucatan Country Club, Merida, Yucatan, Mexico', lat: 21.0841, lon: -89.7226, keywords: ['yucatan country club', 'golf merida'] },
+  { label: 'Club de Golf La Ceiba, Merida, Yucatan, Mexico', lat: 21.0363, lon: -89.6768, keywords: ['la ceiba golf merida', 'club de golf la ceiba'] },
+  { label: 'Cancun Country Club El Tinto, Cancun, Quintana Roo, Mexico', lat: 21.0478, lon: -86.8696, keywords: ['el tinto golf', 'cancun country club'] },
+  { label: 'Riviera Cancun Golf Club, Cancun, Quintana Roo, Mexico', lat: 21.0287, lon: -86.8387, keywords: ['riviera cancun golf', 'golf cancun'] },
+  { label: 'Mayakoba El Camaleon Golf Course, Playa del Carmen, Quintana Roo, Mexico', lat: 20.7168, lon: -87.0248, keywords: ['el camaleon', 'mayakoba golf', 'playa del carmen golf'] },
+  { label: 'Iberostar Playa Paraiso Golf Club, Playa del Carmen, Quintana Roo, Mexico', lat: 20.7296, lon: -86.9914, keywords: ['iberostar golf', 'playa paraiso golf'] },
+  { label: 'Puerto Cancun Golf Course, Cancun, Quintana Roo, Mexico', lat: 21.1536, lon: -86.8031, keywords: ['puerto cancun golf', 'golf puerto cancun'] },
+  { label: 'Campo de Golf Fonatur, San Jose del Cabo, Baja California Sur, Mexico', lat: 23.0609, lon: -109.7014, keywords: ['fonatur golf', 'san jose del cabo golf'] },
+  { label: 'Club Campestre San Jose, San Jose del Cabo, Baja California Sur, Mexico', lat: 23.0576, lon: -109.7089, keywords: ['campestre san jose', 'san jose country club'] },
+  { label: 'Cabo del Sol Golf, Cabo San Lucas, Baja California Sur, Mexico', lat: 22.9738, lon: -109.8602, keywords: ['cabo del sol', 'golf cabo san lucas'] },
+  { label: 'Palmilla Golf Club, San Jose del Cabo, Baja California Sur, Mexico', lat: 23.0358, lon: -109.7051, keywords: ['palmilla golf', 'club de golf palmilla'] },
+  { label: 'Vidanta Golf Nuevo Vallarta, Bahia de Banderas, Nayarit, Mexico', lat: 20.7008, lon: -105.3021, keywords: ['vidanta golf', 'nuevo vallarta golf'] },
+  { label: 'Marina Vallarta Golf Club, Puerto Vallarta, Jalisco, Mexico', lat: 20.6769, lon: -105.2530, keywords: ['marina vallarta golf', 'golf puerto vallarta'] },
+  { label: 'Club Campestre Queretaro, Queretaro, Queretaro, Mexico', lat: 20.6187, lon: -100.3881, keywords: ['campestre queretaro', 'club campestre queretaro'] },
+  { label: 'Juriquilla Golf Club, Queretaro, Queretaro, Mexico', lat: 20.7119, lon: -100.4461, keywords: ['juriquilla golf', 'club de golf juriquilla'] },
+  { label: 'El Campanario Country Club, Queretaro, Queretaro, Mexico', lat: 20.6335, lon: -100.3438, keywords: ['el campanario golf', 'campanario country club'] },
+  { label: 'Campestre Torreon, Torreon, Coahuila, Mexico', lat: 25.5390, lon: -103.4308, keywords: ['campestre torreon', 'club campestre torreon'] },
+  { label: 'Club Campestre Chihuahua, Chihuahua, Chihuahua, Mexico', lat: 28.6674, lon: -106.1068, keywords: ['campestre chihuahua', 'club campestre chihuahua'] },
+  { label: 'Club Campestre Tijuana, Tijuana, Baja California, Mexico', lat: 32.4939, lon: -116.9977, keywords: ['campestre tijuana', 'club campestre tijuana'] }
 ];
 
 const MEXICO_GOLF_CLUBS = [
