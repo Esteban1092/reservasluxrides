@@ -26,8 +26,8 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
   width:95vw;
   max-width:420px;
   max-height:90vh;
-  border-radius:24px;
-  background:rgba(10,10,10,0.97);
+  border-radius:28px;
+  background:rgba(10,10,10,0.98);
   box-shadow:0 8px 32px rgba(0,0,0,0.38);
   color:#f3f3f3;
   overflow:hidden;
@@ -37,7 +37,7 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
   width:100%;height:28px;cursor:grab;display:flex;align-items:center;justify-content:center;
   background:rgba(255,255,255,0.08);
   border-bottom:1.5px solid rgba(255,255,255,0.08);
-  border-radius:22px 22px 0 0;
+  border-radius:28px 28px 0 0;
 }
 .drag-handle:after{
   content:'';
@@ -48,41 +48,44 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
   background:rgba(255,255,255,0.22);
 }
 .inner{
-  padding:28px 18px 18px 18px;
+  padding:32px 18px 24px 18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
 }
-/* Título dorado grande */
 .brand h1{
   font-family:'Playfair Display',serif;
-  font-size:2.3rem;
+  font-size:2.5rem;
   font-weight:700;
   color:#D4AF37;
   letter-spacing:0.13em;
   margin-bottom:0;
   margin-top:0;
-  text-align:left;
+  text-align:center;
   text-shadow:0 2px 12px rgba(0,0,0,0.18);
 }
 .brand p{
-  font-size:1.08rem;
-  color:rgba(255,255,255,0.82);
+  font-size:1.13rem;
+  color:rgba(255,255,255,0.88);
   margin-bottom:18px;
   margin-top:0;
-  text-align:left;
+  text-align:center;
   font-family:'Outfit',sans-serif;
   font-weight:400;
   letter-spacing:0.04em;
 }
-/* Aviso importante rojo sobre fondo oscuro */
 .service-note{
-  background:rgba(60,0,0,0.55);
-  border:1.5px solid #EF4444;
+  background:rgba(60,0,0,0.65);
+  border:2px solid #EF4444;
   color:#ffb4b4;
   font-weight:600;
-  margin-bottom:18px;
-  border-radius:12px;
-  padding:13px 16px;
-  font-size:1.01rem;
-  box-shadow:0 2px 12px rgba(239,68,68,0.08);
+  margin-bottom:22px;
+  border-radius:14px;
+  padding:15px 18px;
+  font-size:1.08rem;
+  box-shadow:0 2px 12px rgba(239,68,68,0.13);
+  text-align:center;
 }
 @media(max-width:767px){
   #panel{
@@ -92,14 +95,19 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
     transform:translateX(-50%,0);
     max-width:100vw;
     max-height:98vh;
-    border-radius:0 0 24px 24px;
+    border-radius:0 0 28px 28px;
     background:rgba(10,10,10,0.98);
   }
   .inner{
-    padding:18px 8px 12px 8px;
+    padding:22px 6vw 18px 6vw;
+    align-items:center;
+    justify-content:center;
   }
   .drag-handle{
     height:32px;
+  }
+  .brand h1, .brand p, .service-note {
+    text-align:center;
   }
 }
   /* ...código JS eliminado por error de sintaxis... */
@@ -1824,7 +1832,7 @@ async function obtenerInfoChoferParaWhatsApp(reservaId){
     const marca = r.chofer_marca || '-';
     const modelo = r.chofer_modelo || '-';
     const color = r.chofer_color || '-';
-    const placa = r.chofer_placa || '-';
+    const placa = r.chofer_placa || '';
 
     let linkUbicacion = '';
     if (typeof r.chofer_ubicacion_inicial?.lat === 'number' && typeof r.chofer_ubicacion_inicial?.lng === 'number') {
@@ -2234,7 +2242,7 @@ async function renderRutaChofer(){
       const estado = String(reservaSeguimientoActual?.estado || '').toLowerCase();
       const nombreChofer = reservaSeguimientoActual?.chofer_nombre || 'Tu chofer';
       if (estado === 'asignado') {
-        setTrackStatus(`🚗 ${nombreChofer} viene en camino. Llega en ~${etaMin} min (${horaLlegada})`);
+        setTrackStatus(`✅ Chofer asignado: ${nombreChofer}. En camino a recogerte...`);
       } else if (estado === 'en curso' || estado === 'en_curso') {
         setTrackStatus(`🚘 ${nombreChofer} te lleva a tu destino. Llegada en ~${etaMin} min.`);
       }
