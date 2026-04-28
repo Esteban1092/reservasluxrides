@@ -17,76 +17,85 @@ html, body{width:100%;height:100%;margin:0;padding:0;}
 #map{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;background:#e8f4f8;}
 body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:100vw;height:100vh;margin:0;padding:0;overflow:hidden;}
 #map{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;background:#e8f4f8;}
+/* PANEL FLOTANTE OSCURO Y MOVIBLE */
 #panel{
   position:fixed;
   z-index:1000;
   left:50%;
-  bottom:24px;
+  top:40px;
   transform:translateX(-50%);
   width:95vw;
   max-width:420px;
   max-height:90vh;
   border-radius:22px;
-  if(!resultado) return;
-  const esMovil = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
-  // En desktop abrimos una ventana inmediata para evitar bloqueadores tras awaits.
-  const waWindow = esMovil ? null : window.open('about:blank','_blank','noopener,noreferrer');
-  const guardadoInfo = await guardarReserva();
-  if (guardadoInfo?.ok && guardadoInfo?.reservaId) {
-    iniciarSeguimientoCliente(guardadoInfo.reservaId);
+  background:rgba(20,20,20,0.97);
+  box-shadow:0 8px 32px rgba(0,0,0,0.28);
+  color:#fff;
+  overflow:hidden;
+  touch-action:none;
+}
+.drag-handle{
+  width:100%;height:28px;cursor:grab;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.08);
+  border-bottom:1.5px solid rgba(255,255,255,0.08);
+  border-radius:22px 22px 0 0;
+}
+.drag-handle:after{
+  content:'';
+  display:block;
+  width:48px;
+  height:5px;
+  border-radius:4px;
+  background:rgba(255,255,255,0.22);
+}
+.inner{
+  padding:28px 18px 18px 18px;
+}
+.brand h1{
+  font-family:'Playfair Display',serif;
+  font-size:2.1rem;
+  font-weight:700;
+  color:var(--gold,#D4AF37);
+  letter-spacing:0.12em;
+  margin-bottom:0;
+  margin-top:0;
+  text-align:left;
+}
+.brand p{
+  font-size:1.05rem;
+  color:rgba(255,255,255,0.72);
+  margin-bottom:18px;
+  margin-top:0;
+  text-align:left;
+}
+.service-note{
+  background:rgba(239,68,68,0.10);
+  border:1.5px solid #EF4444;
+  color:#ffb4b4;
+  font-weight:600;
+  margin-bottom:18px;
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:0.98rem;
+}
+@media(max-width:767px){
+  #panel{
+    width:99vw;
+    left:50%;
+    top:0;
+    transform:translateX(-50%,0);
+    max-width:100vw;
+    max-height:98vh;
+    border-radius:0 0 22px 22px;
   }
-  const nombre=document.getElementById('inp-nombre').value.trim();
-  const fecha=document.getElementById('inp-fecha').value;
-  const hora=document.getElementById('inp-hora').value;
-  const min=document.getElementById('inp-min').value.toString().padStart(2,'0');
-  const vehiculo=pasajeros<=3?'Sedán VIP Diamond':'SUV Platinum Diamond';
-  const horaLleg=servicio==='I'?calcHoraLlegada(resultado.duracionMin):'';
-  const aerolinea=document.getElementById('inp-aerolinea').value.trim();
-  const vuelo=document.getElementById('inp-vuelo').value.trim();
-  const salida=document.getElementById('inp-vuelo-salida').value.trim();
-  const numeroCliente=document.getElementById('inp-cliente-num').value.trim();
-  const trasladoTexto = tipoTraslado==='P' ? 'Pick Up' : (tipoTraslado==='D' ? 'Drop Off' : 'Normal');
-  const choferInfo = await obtenerInfoChoferParaWhatsApp(guardadoInfo?.reservaId);
-
-  const choferLineas = choferInfo.tieneChofer
-    ? [
-        `👨‍✈️ *Chofer:* ${choferInfo.nombre}`,
-        `🚘 *Unidad:* ${choferInfo.unidad}`,
-        `🎨 *Color/Placa:* ${choferInfo.colorPlaca}`,
-        choferInfo.linkUbicacion ? `📍 *Ubicación chofer:* ${choferInfo.linkUbicacion}` : ''
-      ]
-    : [
-        `👨‍✈️ *Chofer:* Pendiente de asignación`,
-        `📍 *Ubicación chofer:* Se compartirá al asignar`
-      ];
-
-  const lines=[
-    `*🚗 RESERVA LUXRIDES VIP*`,
-    `━━━━━━━━━━━━━━━━━`,
-    guardadoInfo?.ok ? `🗄️ *Firebase:* Guardada ✅` : `🗄️ *Firebase:* No guardada ⚠️`,
-    `👤 *Cliente:* ${nombre}`,
-    `🚘 *Vehículo:* ${vehiculo}`,
-    `🔁 *Traslado:* ${trasladoTexto}`,
-    `📍 *Origen:* ${coordOrigen?.display||''}`,
-    servicio==='I'?`🏁 *Destino:* ${coordDestino?.display||''}`:`⏱️ *Servicio:* ${hSel} horas`,
-    (tipoTraslado==='P' || tipoTraslado==='D')?`✈️ *Aerolínea:* ${aerolinea}`:'',
-    (tipoTraslado==='P' || tipoTraslado==='D')?`🧾 *Vuelo:* ${vuelo}`:'',
-    (tipoTraslado==='P' || tipoTraslado==='D')?`🌍 *Salida vuelo:* ${salida}`:'',
-    (tipoTraslado==='P' || tipoTraslado==='D')?`📱 *Número cliente:* ${numeroCliente}`:'',
-    servicio==='I'?`📏 *Distancia:* ${resultado.distanciaKm} km`:'',
-    servicio==='I'?`⏳ *Tiempo:* ${resultado.duracionMin} minutos`:'',
-    `📅 *Fecha:* ${fecha}`,
-    `⏰ *Hora de recogida:* ${hora}:${min} ${ampm}`,
-    servicio==='I'?`🏁 *Hora estimada llegada:* ${horaLleg}`:'',
-    `👥 *Pasajeros:* ${pasajeros}`,
-    ...choferLineas,
-    `━━━━━━━━━━━━━━━━━`,
-    `💰 *TOTAL: $${resultado.totalPrecio.toLocaleString()} MXN*`,
-  ].filter(l=>l!=='').join('\n');
-
-  const numeroCentral = normalizarNumeroWhatsApp(WHATSAPP_CENTRAL);
-  const encodedText = encodeURIComponent(lines);
-  abrirWhatsAppSeguro(numeroCentral, encodedText, waWindow);
+  .inner{
+    padding:18px 8px 12px 8px;
+  }
+  .drag-handle{
+    height:32px;
+  }
+}
+  /* ...código JS eliminado por error de sintaxis... */
 .btn-pax{flex:1;padding:10px 4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;transition:all .2s;}
 .btn-pax.active{background:var(--gold);border-color:var(--gold);color:#050505;font-weight:600;}
 .vehicle-hint{text-align:center;font-size:0.75rem;color:var(--gold);margin-top:6px;}
@@ -188,17 +197,44 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
 <body>
 <div id="map"></div>
 <div id="panel">
-  <div class="drag-handle"></div>
+  <div class="drag-handle" ontouchstart="startDrag(event)" ontouchmove="onDrag(event)" ontouchend="endDrag(event)" onmousedown="startDrag(event)"></div>
   <div class="inner">
     <div class="brand">
       <h1>LUXRIDES 3.7</h1>
       <p>Transporte Ejecutivo VIP Nacional</p>
     </div>
-
-    <div class="service-note" style="background:rgba(239,68,68,0.10);border:1.5px solid #EF4444;color:#991b1b;font-weight:600;margin-bottom:18px;">
+    <div class="service-note">
       <b>IMPORTANTE:</b> La asignación de su conductor se realizará durante el proceso de pago.<br>
       Agradecemos incluir el nombre del usuario en el concepto del pago.
     </div>
+</style>
+<script>
+// Drag panel (movible en móviles y desktop)
+let dragPanel = null, dragStartY = 0, dragStartTop = 0;
+function startDrag(e){
+  dragPanel = document.getElementById('panel');
+  dragPanel.style.transition = 'none';
+  dragStartY = (e.touches ? e.touches[0].clientY : e.clientY);
+  dragStartTop = dragPanel.offsetTop;
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+}
+function onDrag(e){
+  if(!dragPanel) return;
+  let clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+  let deltaY = clientY - dragStartY;
+  let newTop = Math.max(0, Math.min(window.innerHeight - 80, dragStartTop + deltaY));
+  dragPanel.style.top = newTop + 'px';
+}
+function endDrag(){
+  if(!dragPanel) return;
+  dragPanel.style.transition = '';
+  dragPanel = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+}
+document.addEventListener('touchend', endDrag);
+</script>
 
     <div class="status-row">
       <span id="status-maps" class="status-pill">Mapas: iniciando...</span>
