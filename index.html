@@ -27,67 +27,66 @@ body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:
   max-width:420px;
   max-height:90vh;
   border-radius:22px;
-  background:var(--glass);
-  box-shadow:var(--shadow);
-  backdrop-filter:blur(24px);
-  border:1.5px solid var(--border);
-  overflow-y:auto;
-  overflow-x:hidden;
-  transition:max-height .3s, box-shadow .3s;
-}
-@media(min-width:768px){
-  #panel{
-    position:absolute;
-    top:32px;
-    left:50%;
-    transform:translateX(-50%);
-    width:420px;
-    max-height:calc(100vh - 64px);
-    border-radius:22px;
-    box-shadow:var(--shadow);
-    cursor: grab;
+  if(!resultado) return;
+  const esMovil = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+  // En desktop abrimos una ventana inmediata para evitar bloqueadores tras awaits.
+  const waWindow = esMovil ? null : window.open('about:blank','_blank','noopener,noreferrer');
+  const guardadoInfo = await guardarReserva();
+  if (guardadoInfo?.ok && guardadoInfo?.reservaId) {
+    iniciarSeguimientoCliente(guardadoInfo.reservaId);
   }
-}
-#panel::-webkit-scrollbar{width:5px;}
-#panel::-webkit-scrollbar-track{background:transparent;}
-#panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px;}
-.inner{padding:20px 10px 24px 10px;}
-@media(min-width:480px){.inner{padding:28px 24px 32px 24px;}}
-.drag-handle{display:block;width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:10px auto 0;}
-@media(min-width:768px){.drag-handle{display:none;}}
-.brand{text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
-.brand h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;letter-spacing:0.2em;color:var(--gold);}
-.brand p{font-size:0.7rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
-label.lbl{display:block;font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:500;}
-.field{margin-bottom:12px;position:relative;}
-.icon-wrap{position:relative;display:flex;align-items:center;}
-.icon-wrap .ico{position:absolute;left:10px;pointer-events:none;font-size:15px;}
-input[type=text],input[type=date],input[type=number],select,button{
-  width:100%;padding:11px 12px 11px 36px;
-  background:rgba(255,255,255,0.03);border:1px solid var(--border);
-  color:var(--fg);font-family:'Outfit',sans-serif;font-size:0.875rem;
-  outline:none;transition:border-color .2s,box-shadow .2s;
-}
-input[type=text]::placeholder,input[type=number]::placeholder{color:rgba(255,255,255,0.25);}
-input:focus,select:focus,button:focus{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);}
-input[type=date]{color-scheme:dark;}
-select{padding-left:12px;padding-right:12px;}
-.btn-row{display:flex;gap:8px;}
-.btn-toggle{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:11px 8px;border:1px solid var(--border);
-  background:transparent;color:var(--muted);
-  font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;
-  transition:all .2s;
-}
-.btn-toggle.active{background:rgba(212,175,55,0.15);border-color:var(--gold);color:var(--gold);}
-.btn-toggle:hover:not(.active){background:rgba(255,255,255,0.05);}
-.hours-box{background:rgba(255,255,255,0.02);padding:12px;border:1px dashed var(--border);margin-bottom:12px;}
-.service-note{margin-top:8px;padding:10px 12px;background:rgba(212,175,55,0.10);border:1px solid rgba(212,175,55,0.45);color:#7a5d10;font-size:0.82rem;line-height:1.4;border-radius:8px;}
-.hours-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px;}
-.btn-hour{padding:10px 4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;transition:all .2s;}
-.btn-hour.active{background:var(--gold);border-color:var(--gold);color:#050505;font-weight:600;}
-.pax-row{display:flex;gap:6px;margin-top:6px;}
+  const nombre=document.getElementById('inp-nombre').value.trim();
+  const fecha=document.getElementById('inp-fecha').value;
+  const hora=document.getElementById('inp-hora').value;
+  const min=document.getElementById('inp-min').value.toString().padStart(2,'0');
+  const vehiculo=pasajeros<=3?'Sedán VIP Diamond':'SUV Platinum Diamond';
+  const horaLleg=servicio==='I'?calcHoraLlegada(resultado.duracionMin):'';
+  const aerolinea=document.getElementById('inp-aerolinea').value.trim();
+  const vuelo=document.getElementById('inp-vuelo').value.trim();
+  const salida=document.getElementById('inp-vuelo-salida').value.trim();
+  const numeroCliente=document.getElementById('inp-cliente-num').value.trim();
+  const trasladoTexto = tipoTraslado==='P' ? 'Pick Up' : (tipoTraslado==='D' ? 'Drop Off' : 'Normal');
+  const choferInfo = await obtenerInfoChoferParaWhatsApp(guardadoInfo?.reservaId);
+
+  const choferLineas = choferInfo.tieneChofer
+    ? [
+        `👨‍✈️ *Chofer:* ${choferInfo.nombre}`,
+        `🚘 *Unidad:* ${choferInfo.unidad}`,
+        `🎨 *Color/Placa:* ${choferInfo.colorPlaca}`,
+        choferInfo.linkUbicacion ? `📍 *Ubicación chofer:* ${choferInfo.linkUbicacion}` : ''
+      ]
+    : [
+        `👨‍✈️ *Chofer:* Pendiente de asignación`,
+        `📍 *Ubicación chofer:* Se compartirá al asignar`
+      ];
+
+  const lines=[
+    `*🚗 RESERVA LUXRIDES VIP*`,
+    `━━━━━━━━━━━━━━━━━`,
+    guardadoInfo?.ok ? `🗄️ *Firebase:* Guardada ✅` : `🗄️ *Firebase:* No guardada ⚠️`,
+    `👤 *Cliente:* ${nombre}`,
+    `🚘 *Vehículo:* ${vehiculo}`,
+    `🔁 *Traslado:* ${trasladoTexto}`,
+    `📍 *Origen:* ${coordOrigen?.display||''}`,
+    servicio==='I'?`🏁 *Destino:* ${coordDestino?.display||''}`:`⏱️ *Servicio:* ${hSel} horas`,
+    (tipoTraslado==='P' || tipoTraslado==='D')?`✈️ *Aerolínea:* ${aerolinea}`:'',
+    (tipoTraslado==='P' || tipoTraslado==='D')?`🧾 *Vuelo:* ${vuelo}`:'',
+    (tipoTraslado==='P' || tipoTraslado==='D')?`🌍 *Salida vuelo:* ${salida}`:'',
+    (tipoTraslado==='P' || tipoTraslado==='D')?`📱 *Número cliente:* ${numeroCliente}`:'',
+    servicio==='I'?`📏 *Distancia:* ${resultado.distanciaKm} km`:'',
+    servicio==='I'?`⏳ *Tiempo:* ${resultado.duracionMin} minutos`:'',
+    `📅 *Fecha:* ${fecha}`,
+    `⏰ *Hora de recogida:* ${hora}:${min} ${ampm}`,
+    servicio==='I'?`🏁 *Hora estimada llegada:* ${horaLleg}`:'',
+    `👥 *Pasajeros:* ${pasajeros}`,
+    ...choferLineas,
+    `━━━━━━━━━━━━━━━━━`,
+    `💰 *TOTAL: $${resultado.totalPrecio.toLocaleString()} MXN*`,
+  ].filter(l=>l!=='').join('\n');
+
+  const numeroCentral = normalizarNumeroWhatsApp(WHATSAPP_CENTRAL);
+  const encodedText = encodeURIComponent(lines);
+  abrirWhatsAppSeguro(numeroCentral, encodedText, waWindow);
 .btn-pax{flex:1;padding:10px 4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;transition:all .2s;}
 .btn-pax.active{background:var(--gold);border-color:var(--gold);color:#050505;font-weight:600;}
 .vehicle-hint{text-align:center;font-size:0.75rem;color:var(--gold);margin-top:6px;}
@@ -1708,7 +1707,7 @@ async function enviarWhatsApp(){
   const vehiculo=pasajeros<=3?'Sedán VIP Diamond':'SUV Platinum Diamond';
   const horaLleg=servicio==='I'?calcHoraLlegada(resultado.duracionMin):'';
   const aerolinea=document.getElementById('inp-aerolinea').value.trim();
-  const vuelo=document.getElementById('inp-vuelo').value.trim();
+nooo no quiero eso vuelv a  reiuq on ooon bew al a eivne el on neuq aeso noicacifitn al narba ayl e uq orep oneubdnauc se oreiuq euq ol o repppastsathw rirba nis sejasnem sol eivne el olos ol ay euq oreiuq orep sonugla  onu lnaimret al arapsedirxul ed ohcapsed l e ne etnemacitamotua eivne es euq onnoon y otselom se euqrop anretxe anigap anu a evell et o edrat on eu edrat es on euqq otisecen ppastahw ed notob le a ned el odnauc 7.3 sedirxul ne
   const salida=document.getElementById('inp-vuelo-salida').value.trim();
   const numeroCliente=document.getElementById('inp-cliente-num').value.trim();
   const trasladoTexto = tipoTraslado==='P' ? 'Pick Up' : (tipoTraslado==='D' ? 'Drop Off' : 'Normal');
@@ -1759,31 +1758,7 @@ async function enviarWhatsApp(){
   }
 }
 
-// Notificación visual para WhatsApp
-function mostrarNotificacionWhatsApp(msg) {
-  let div = document.getElementById('wa-copied-msg');
-  if (!div) {
-    div = document.createElement('div');
-    div.id = 'wa-copied-msg';
-    div.style.position = 'fixed';
-    div.style.bottom = '32px';
-    div.style.left = '50%';
-    div.style.transform = 'translateX(-50%)';
-    div.style.background = '#25D366';
-    div.style.color = '#fff';
-    div.style.fontSize = '1rem';
-    div.style.fontFamily = 'Outfit,sans-serif';
-    div.style.padding = '16px 32px';
-    div.style.borderRadius = '12px';
-    div.style.boxShadow = '0 4px 24px rgba(0,0,0,0.12)';
-    div.style.zIndex = '99999';
-    div.style.textAlign = 'center';
-    document.body.appendChild(div);
-  }
-  div.textContent = msg;
-  div.style.display = 'block';
-  setTimeout(() => { div.style.display = 'none'; }, 3500);
-}
+
 
 async function obtenerInfoChoferParaWhatsApp(reservaId){
   const vacio = {
@@ -2761,5 +2736,11 @@ setTimeout(() => {
   }
 }, 3500);
 </script>
+<!-- Botón de confirmación por WhatsApp -->
+<div style="text-align:center; margin: 40px 0;">
+  <a href="https://wa.me/525527729551?text=Hola,%20quiero%20confirmar%20mi%20servicio%20con%20LuxRides" target="_blank" style="display:inline-block; background:linear-gradient(90deg,#25D366 0%,#128C7E 100%); color:white; padding:16px 32px; border-radius:8px; font-size:20px; text-decoration:none; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.15); border:2px solid #128C7E; transition:background 0.3s;">
+    <span style="vertical-align:middle; margin-right:10px; font-size:24px;">🟢</span>Confirmar por WhatsApp
+  </a>
+</div>
 </body>
 </html>
