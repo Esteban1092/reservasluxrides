@@ -69,40 +69,21 @@
       position: fixed;
       top: 40px;
       left: 40px;
-      width: 370px;
-      max-width: 90vw;
+      width: 400px;
+      max-width: 98vw;
       background: linear-gradient(135deg, #181818 80%, #bfa046 100%);
       border-radius: 18px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-      padding: 28px 18px 32px 18px;
+      padding: 38px 24px 32px 24px;
       z-index: 10;
-      cursor: move;
-      transition: box-shadow 0.2s;
       color: #fff;
       border: 2px solid #bfa046;
+      overflow-y: auto;
+      cursor: move;
+      transition: box-shadow 0.2s;
     }
     .container:active {
       box-shadow: 0 12px 40px rgba(0,0,0,0.28);
-    }
-    .logo-title {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-    .logo-title img {
-      height: 48px;
-      width: auto;
-      display: block;
-      filter: brightness(0) invert(1);
-    }
-    .logo-title span {
-      font-size: 2.1em;
-      font-weight: 700;
-      color: #bfa046;
-      letter-spacing: 1px;
-      font-family: 'Montserrat', Arial, sans-serif;
     }
     h1 {
       text-align: center;
@@ -217,16 +198,22 @@
       margin: 10px 0;
       text-align: center;
     }
-    @media (max-width: 600px) {
+    @media (max-width: 900px) {
       .container {
+        position: fixed;
         width: 98vw;
         left: 1vw;
         top: 10px;
+        height: auto;
         border-radius: 12px;
         box-shadow: 0 4px 18px rgba(0,0,0,0.13);
         padding: 10px 2vw 18px 2vw;
+        border: 2px solid #bfa046;
       }
       #map {
+        position: fixed;
+        left: 0;
+        top: 0;
         width: 100vw;
         height: 100vh;
       }
@@ -234,13 +221,10 @@
   </style>
 </head>
 <body>
-  <button id="mostrar-panel-btn" class="mostrar-panel-btn" title="Mostrar reserva">📝</button>
+  <!-- <button id="mostrar-panel-btn" class="mostrar-panel-btn" title="Mostrar reserva">📝</button> -->
   <div class="container" id="reserva-panel">
-    <button class="minimizar-btn" id="minimizar-btn" title="Minimizar">–</button>
-    <div class="logo-title">
-      <img src="logo-luxrides.png" alt="Logo Luxrides" />
-      <span>Luxrides VIP</span>
-    </div>
+    <!-- <button class="minimizar-btn" id="minimizar-btn" title="Minimizar">–</button> -->
+    <h1 style="text-align:center;color:#bfa046;margin-bottom:10px;">Luxrides VIP</h1>
     <!-- Nota de pago importante -->
     <div style="background:#232323;border:2px solid #bfa046;color:#bfa046;padding:14px 12px 10px 12px;border-radius:10px;margin-bottom:18px;font-weight:600;">
       <span style="font-size:1.1em;">IMPORTANTE:</span> La asignación de su conductor se realizará durante el proceso de pago.<br>
@@ -287,7 +271,7 @@
       <label for="pasajeros">Número de pasajeros</label>
       <input type="number" id="pasajeros" name="pasajeros" min="1" max="12" value="1" required>
 
-      <div id="map"></div>
+
 
       <button type="button" id="calcular-precio" style="background:#232323;color:#bfa046;font-weight:700;">Calcular precio</button>
       <div class="precio" id="precio"></div>
@@ -299,6 +283,7 @@
   </div>
 
   <!-- Google Maps y Places API -->
+  <div id="map"></div>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUg6f_AeINCNn8VWU1GDjpjq5_e8A8GvQ&libraries=places"></script>
 
   <!-- Firebase -->
@@ -320,54 +305,47 @@
   </script>
 
   <script>
-            // --- Minimizar/mostrar panel ---
-            const panel = document.getElementById('reserva-panel');
-            const minimizarBtn = document.getElementById('minimizar-btn');
-            const mostrarPanelBtn = document.getElementById('mostrar-panel-btn');
-            minimizarBtn.onclick = function(e) {
-              e.stopPropagation();
-              panel.style.display = 'none';
-              mostrarPanelBtn.classList.add('visible');
-            };
-            mostrarPanelBtn.onclick = function() {
-              panel.style.display = '';
-              mostrarPanelBtn.classList.remove('visible');
-            };
-        // --- Hacer el panel movible ---
-        (function() {
-          const panel = document.getElementById('reserva-panel');
-          let isDragging = false, startX, startY, startLeft, startTop;
-          panel.addEventListener('mousedown', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            startLeft = panel.offsetLeft;
-            startTop = panel.offsetTop;
-            panel.style.transition = 'none';
-          });
-          document.addEventListener('mousemove', function(e) {
-            if (!isDragging) return;
-            let dx = e.clientX - startX;
-            let dy = e.clientY - startY;
-            let newLeft = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, startLeft + dx));
-            let newTop = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, startTop + dy));
-            panel.style.left = newLeft + 'px';
-            panel.style.top = newTop + 'px';
-          });
-          document.addEventListener('mouseup', function() {
-            isDragging = false;
-            panel.style.transition = '';
-          });
-        })();
+
+    // --- Hacer el panel movible ---
+    (function() {
+      const panel = document.getElementById('reserva-panel');
+      let isDragging = false, startX, startY, startLeft, startTop;
+      panel.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = panel.offsetLeft;
+        startTop = panel.offsetTop;
+        panel.style.transition = 'none';
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        let dx = e.clientX - startX;
+        let dy = e.clientY - startY;
+        let newLeft = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, startLeft + dx));
+        let newTop = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, startTop + dy));
+        panel.style.left = newLeft + 'px';
+        panel.style.top = newTop + 'px';
+      });
+      document.addEventListener('mouseup', function() {
+        isDragging = false;
+        panel.style.transition = '';
+      });
+    })();
+
     // --- Google Maps y Autocompletado ---
     let map, origenAutocomplete, destinoAutocomplete, paradaAutocompletes = [];
     let paradas = [];
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 19.0436, lng: -98.1986 }, // Puebla
-        zoom: 12
+        zoom: 12,
+        disableDefaultUI: false
       });
+      // Capa de tráfico
+      const trafficLayer = new google.maps.TrafficLayer();
+      trafficLayer.setMap(map);
       origenAutocomplete = new google.maps.places.Autocomplete(document.getElementById('origen'), {
         componentRestrictions: { country: 'mx' },
         fields: ['place_id', 'geometry', 'name', 'formatted_address']
@@ -402,7 +380,10 @@
         };
       });
       // Calcular precio
-      document.getElementById('calcular-precio').onclick = calcularPrecio;
+      document.getElementById('calcular-precio').onclick = function(e) {
+        e.preventDefault();
+        calcularPrecio();
+      };
       // WhatsApp
       document.getElementById('whatsapp-btn').onclick = enviarWhatsApp;
     };
