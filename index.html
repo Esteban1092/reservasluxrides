@@ -288,6 +288,8 @@
         if (distancia <= 4) precio = 320;
         else precio = 320 + (distancia - 4) * 45;
       }
+      // Aplicar descuento del 10%
+      precio = Math.round(precio * 0.9);
       document.getElementById('precio').innerText = `Precio estimado: $${precio} MXN (${tipoVehiculo}, ${distancia} km)`;
     }
     // --- WhatsApp ---
