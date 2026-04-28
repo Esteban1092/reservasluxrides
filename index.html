@@ -17,97 +17,257 @@ html, body{width:100%;height:100%;margin:0;padding:0;}
 #map{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;background:#e8f4f8;}
 body{background:var(--bg);color:var(--fg);font-family:'Outfit',sans-serif;width:100vw;height:100vh;margin:0;padding:0;overflow:hidden;}
 #map{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;background:#e8f4f8;}
-/* PANEL FLOTANTE OSCURO Y MOVIBLE */
-  position:fixed;
-  z-index:1000;
-  left:50%;
-  top:40px;
-  transform:translateX(-50%);
-  width:95vw;
-  max-width:420px;
-  max-height:90vh;
-  border-radius:28px;
-  background:rgba(10,10,10,0.98);
-  box-shadow:0 8px 32px rgba(0,0,0,0.38);
-  color:#f3f3f3;
-  overflow:hidden;
-  touch-action:none;
+/* PANEL FLOTANTE PREMIUM */
+#panel {
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  width: 96vw;
+  max-width: 420px;
+  max-height: 92vh;
+  border-radius: 28px;
+  background: rgba(10,10,10,0.98);
+  box-shadow: 0 12px 40px 0 rgba(0,0,0,0.38), 0 1.5px 8px 0 rgba(212,175,55,0.08);
+  color: #f3f3f3;
+  overflow: hidden;
+  touch-action: none;
+  border: 2.5px solid #D4AF37;
 }
-.drag-handle{
-  width:100%;height:28px;cursor:grab;display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,0.08);
-  border-bottom:1.5px solid rgba(255,255,255,0.08);
-  border-radius:28px 28px 0 0;
+.drag-handle {
+  width: 100%;
+  height: 32px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  border-bottom: 2px solid #D4AF37;
+  border-radius: 28px 28px 0 0;
 }
-.drag-handle:after{
-  content:'';
-  display:block;
-  width:48px;
-  height:5px;
-  border-radius:4px;
-  background:rgba(255,255,255,0.22);
+.drag-handle:after {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 5px;
+  border-radius: 4px;
+  background: #D4AF37;
 }
-.inner{
-  padding:32px 18px 24px 18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+.inner {
+  padding: 32px 18px 24px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.brand h1{
-  font-family:'Playfair Display',serif;
-  font-size:2.5rem;
-  font-weight:700;
-  color:#D4AF37;
-  letter-spacing:0.13em;
-  margin-bottom:0;
-  margin-top:0;
-  text-align:center;
-  text-shadow:0 2px 12px rgba(0,0,0,0.18);
+.brand h1 {
+  font-family: 'Playfair Display',serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #D4AF37;
+  letter-spacing: 0.13em;
+  margin-bottom: 0;
+  margin-top: 0;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.18);
 }
-.brand p{
-  font-size:1.13rem;
-  color:rgba(255,255,255,0.88);
-  margin-bottom:18px;
-  margin-top:0;
-  text-align:center;
-  font-family:'Outfit',sans-serif;
-  font-weight:400;
-  letter-spacing:0.04em;
+.brand p {
+  font-size: 1.13rem;
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 18px;
+  margin-top: 0;
+  text-align: center;
+  font-family: 'Outfit',sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
-.service-note{
-  background:rgba(60,0,0,0.65);
-  border:2px solid #EF4444;
-  color:#ffb4b4;
-  font-weight:600;
-  margin-bottom:22px;
-  border-radius:14px;
-  padding:15px 18px;
-  font-size:1.08rem;
-  box-shadow:0 2px 12px rgba(239,68,68,0.13);
-  text-align:center;
+.service-note {
+  background: rgba(60,0,0,0.65);
+  border: 2px solid #EF4444;
+  color: #ffb4b4;
+  font-weight: 600;
+  margin-bottom: 22px;
+  border-radius: 14px;
+  padding: 15px 18px;
+  font-size: 1.08rem;
+  box-shadow: 0 2px 12px rgba(239,68,68,0.13);
+  text-align: center;
 }
-@media(max-width:767px){
-  #panel{
-    width:99vw;
-    left:50%;
-    top:0;
-    transform:translateX(-50%,0);
-    max-width:100vw;
-    max-height:98vh;
-    border-radius:0 0 28px 28px;
-    background:rgba(10,10,10,0.98);
+/* BOTONES PREMIUM */
+#btn-wa {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  background: #25D366;
+  color: #fff;
+  font-family: 'Outfit',sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: 12px;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(34,197,94,0.13);
+  transition: background .2s;
+}
+#btn-wa:hover {
+  background: #1ebe5d;
+}
+#btn-clip {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #D4AF37;
+  background: #181818;
+  color: #D4AF37;
+  font-family: 'Outfit',sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(212,175,55,0.10);
+  transition: background .2s, color .2s;
+}
+#btn-clip:hover {
+  background: #D4AF37;
+  color: #181818;
+}
+.clip-note {
+  color: #D4AF37;
+  font-size: 0.98rem;
+  margin-top: 8px;
+  text-align: center;
+}
+/* SECCIÓN CHOFER PREMIUM */
+.track-box {
+  margin-top: 18px;
+  padding: 18px 16px;
+  border: 2px solid #D4AF37;
+  background: rgba(212,175,55,0.08);
+  font-size: 1.01rem;
+  color: #D4AF37;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(212,175,55,0.10);
+  display: block;
+}
+.driver-chip {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid #D4AF37;
+  background: rgba(30,30,30,0.92);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.01rem;
+  line-height: 1.5;
+  display: block;
+}
+.driver-chip b {
+  color: #D4AF37;
+}
+/* CALIFICACIÓN PREMIUM */
+.rating-box {
+  display: block;
+  margin-top: 18px;
+  padding: 18px 16px;
+  border: 2px solid #D4AF37;
+  background: rgba(30,30,30,0.92);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(212,175,55,0.10);
+}
+.rating-title {
+  font-size: 1.01rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #D4AF37;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.rating-stars {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.star-btn {
+  flex: 1;
+  max-width: 48px;
+  padding: 10px 0;
+  border: 1.5px solid #D4AF37;
+  background: rgba(255,255,255,0.08);
+  color: #D4AF37;
+  font-size: 1.35rem;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background .2s, color .2s;
+}
+.star-btn.active {
+  background: #D4AF37;
+  color: #181818;
+}
+.rating-box textarea {
+  width: 100%;
+  min-height: 78px;
+  padding: 10px 12px;
+  border: 1.5px solid #D4AF37;
+  border-radius: 8px;
+  background: #181818;
+  color: #fff;
+  font-family: 'Outfit',sans-serif;
+  font-size: 0.98rem;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+.rating-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.btn-rating {
+  border: none;
+  background: #D4AF37;
+  color: #181818;
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-family: 'Outfit',sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1.05rem;
+}
+.rating-status {
+  margin-top: 8px;
+  font-size: 0.95rem;
+  color: #D4AF37;
+  min-height: 18px;
+  text-align: center;
+}
+@media(max-width: 767px) {
+  #panel {
+    width: 99vw;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%,0);
+    max-width: 100vw;
+    max-height: 98vh;
+    border-radius: 0 0 28px 28px;
+    background: rgba(10,10,10,0.98);
   }
-  .inner{
-    padding:22px 6vw 18px 6vw;
-    align-items:center;
-    justify-content:center;
+  .inner {
+    padding: 22px 6vw 18px 6vw;
+    align-items: center;
+    justify-content: center;
   }
-  .drag-handle{
-    height:32px;
+  .drag-handle {
+    height: 32px;
   }
   .brand h1, .brand p, .service-note {
-    text-align:center;
+    text-align: center;
   }
 }
   /* ...código JS eliminado por error de sintaxis... */
@@ -543,68 +703,7 @@ let clientSWRegistration = null;
 let clientFcmToken = null;
 let foregroundPushReady = false;
 
-const MEXICO_STATE_SUGGESTIONS = [
-  { state: 'Aguascalientes', capital: 'Aguascalientes', lat: 21.8853, lon: -102.2916, aliases: ['aguascalientes'] },
-  { state: 'Baja California', capital: 'Mexicali', lat: 32.6245, lon: -115.4523, aliases: ['baja california', 'mexicali'] },
-  { state: 'Baja California Sur', capital: 'La Paz', lat: 24.1426, lon: -110.3128, aliases: ['baja california sur', 'la paz'] },
-  { state: 'Campeche', capital: 'Campeche', lat: 19.8301, lon: -90.5349, aliases: ['campeche'] },
-  { state: 'Chiapas', capital: 'Tuxtla Gutierrez', lat: 16.7516, lon: -93.1163, aliases: ['chiapas', 'tuxtla', 'tuxtla gutierrez'] },
-  { state: 'Chihuahua', capital: 'Chihuahua', lat: 28.6329, lon: -106.0691, aliases: ['chihuahua'] },
-  { state: 'Ciudad de Mexico', capital: 'Ciudad de Mexico', lat: 19.4326, lon: -99.1332, aliases: ['ciudad de mexico', 'cdmx', 'df'] },
-  { state: 'Coahuila', capital: 'Saltillo', lat: 25.4267, lon: -100.9954, aliases: ['coahuila', 'saltillo'] },
-  { state: 'Colima', capital: 'Colima', lat: 19.2452, lon: -103.7241, aliases: ['colima'] },
-  { state: 'Durango', capital: 'Durango', lat: 24.0277, lon: -104.6532, aliases: ['durango'] },
-  { state: 'Guanajuato', capital: 'Guanajuato', lat: 21.0190, lon: -101.2574, aliases: ['guanajuato'] },
-  { state: 'Guerrero', capital: 'Chilpancingo', lat: 17.5515, lon: -99.5006, aliases: ['guerrero', 'chilpancingo'] },
-  { state: 'Hidalgo', capital: 'Pachuca', lat: 20.1011, lon: -98.7591, aliases: ['hidalgo', 'pachuca'] },
-  { state: 'Jalisco', capital: 'Guadalajara', lat: 20.6597, lon: -103.3496, aliases: ['jalisco', 'guadalajara'] },
-  { state: 'Mexico', capital: 'Toluca', lat: 19.2826, lon: -99.6557, aliases: ['estado de mexico', 'edomex', 'mexico', 'toluca'] },
-  { state: 'Michoacan', capital: 'Morelia', lat: 19.7059, lon: -101.1949, aliases: ['michoacan', 'morelia'] },
-  { state: 'Morelos', capital: 'Cuernavaca', lat: 18.9242, lon: -99.2216, aliases: ['morelos', 'cuernavaca'] },
-  { state: 'Nayarit', capital: 'Tepic', lat: 21.5042, lon: -104.8958, aliases: ['nayarit', 'tepic'] },
-  { state: 'Nuevo Leon', capital: 'Monterrey', lat: 25.6866, lon: -100.3161, aliases: ['nuevo leon', 'monterrey'] },
-  { state: 'Oaxaca', capital: 'Oaxaca', lat: 17.0732, lon: -96.7266, aliases: ['oaxaca'] },
-  { state: 'Puebla', capital: 'Puebla', lat: 19.0414, lon: -98.2063, aliases: ['puebla'] },
-  { state: 'Queretaro', capital: 'Queretaro', lat: 20.5888, lon: -100.3899, aliases: ['queretaro'] },
-  { state: 'Quintana Roo', capital: 'Chetumal', lat: 18.5002, lon: -88.2961, aliases: ['quintana roo', 'chetumal'] },
-  { state: 'San Luis Potosi', capital: 'San Luis Potosi', lat: 22.1565, lon: -100.9855, aliases: ['san luis potosi'] },
-  { state: 'Sinaloa', capital: 'Culiacan', lat: 24.8091, lon: -107.3940, aliases: ['sinaloa', 'culiacan'] },
-  { state: 'Sonora', capital: 'Hermosillo', lat: 29.0729, lon: -110.9559, aliases: ['sonora', 'hermosillo'] },
-  { state: 'Tabasco', capital: 'Villahermosa', lat: 17.9892, lon: -92.9475, aliases: ['tabasco', 'villahermosa'] },
-  { state: 'Tamaulipas', capital: 'Ciudad Victoria', lat: 23.7369, lon: -99.1411, aliases: ['tamaulipas', 'ciudad victoria'] },
-  { state: 'Tlaxcala', capital: 'Tlaxcala', lat: 19.3139, lon: -98.2404, aliases: ['tlaxcala'] },
-  { state: 'Veracruz', capital: 'Xalapa', lat: 19.5438, lon: -96.9102, aliases: ['veracruz', 'xalapa', 'jalapa'] },
-  { state: 'Yucatan', capital: 'Merida', lat: 20.9674, lon: -89.5926, aliases: ['yucatan', 'merida'] },
-  { state: 'Zacatecas', capital: 'Zacatecas', lat: 22.7709, lon: -102.5832, aliases: ['zacatecas'] }
-];
 
-const MEXICO_KEYWORD_PLACES = [
-  { label: 'Hotel Camino Real Polanco, Ciudad de Mexico, Mexico', lat: 19.4248, lon: -99.1866, keywords: ['hotel camino real polanco', 'camino real polanco', 'camino real cdmx', 'polanco hotel'] },
-  { label: 'Aeropuerto Internacional de la Ciudad de Mexico (AICM) Terminal 1, Ciudad de Mexico, Mexico', lat: 19.43631, lon: -99.07191, keywords: ['terminal 1 cdmx', 'terminal uno cdmx', 'aicm terminal 1', 'terminal 1 aicm', 't1 aicm', 'aeropuerto terminal 1', 'aeropuerto benito juarez terminal 1'] },
-  { label: 'Aeropuerto Internacional de la Ciudad de Mexico (AICM) Terminal 2, Ciudad de Mexico, Mexico', lat: 19.42378, lon: -99.07955, keywords: ['terminal 2 cdmx', 'terminal dos cdmx', 'aicm terminal 2', 'terminal 2 aicm', 't2 aicm', 'aeropuerto terminal 2', 'aeropuerto benito juarez terminal 2'] },
-  { label: 'Aguascalientes, Aguascalientes, Mexico', lat: 21.8853, lon: -102.2916, keywords: ['aguascalientes', 'ags'] },
-  { label: 'Tijuana, Baja California, Mexico', lat: 32.5149, lon: -117.0382, keywords: ['tijuana', 'baja california', 'bc'] },
-  { label: 'Ensenada, Baja California, Mexico', lat: 31.8667, lon: -116.5964, keywords: ['ensenada', 'valle de guadalupe'] },
-  { label: 'La Paz, Baja California Sur, Mexico', lat: 24.1426, lon: -110.3128, keywords: ['la paz', 'bcs', 'baja california sur'] },
-  { label: 'Los Cabos, Baja California Sur, Mexico', lat: 22.8905, lon: -109.9167, keywords: ['los cabos', 'cabo san lucas', 'san jose del cabo'] },
-  { label: 'Campeche, Campeche, Mexico', lat: 19.8301, lon: -90.5349, keywords: ['campeche'] },
-  { label: 'Ciudad del Carmen, Campeche, Mexico', lat: 18.6519, lon: -91.8075, keywords: ['ciudad del carmen', 'carmen'] },
-  { label: 'Tuxtla Gutierrez, Chiapas, Mexico', lat: 16.7516, lon: -93.1163, keywords: ['tuxtla', 'chiapas', 'tuxtla gutierrez'] },
-  { label: 'San Cristobal de las Casas, Chiapas, Mexico', lat: 16.7364, lon: -92.6376, keywords: ['san cristobal', 'san cristobal de las casas'] },
-  { label: 'Chihuahua, Chihuahua, Mexico', lat: 28.6329, lon: -106.0691, keywords: ['chihuahua'] },
-  { label: 'Ciudad Juarez, Chihuahua, Mexico', lat: 31.6904, lon: -106.4245, keywords: ['juarez', 'ciudad juarez'] },
-  { label: 'Ciudad de Mexico, Ciudad de Mexico, Mexico', lat: 19.4326, lon: -99.1332, keywords: ['cdmx', 'ciudad de mexico', 'df', 'aicm'] },
-  { label: 'Santa Lucia AIFA, Estado de Mexico, Mexico', lat: 19.7363, lon: -99.0180, keywords: ['aifa', 'santa lucia', 'felipe angeles'] },
-  { label: 'Saltillo, Coahuila, Mexico', lat: 25.4267, lon: -100.9954, keywords: ['saltillo', 'coahuila'] },
-  { label: 'Torreon, Coahuila, Mexico', lat: 25.5428, lon: -103.4068, keywords: ['torreon', 'laguna'] },
-  { label: 'Colima, Colima, Mexico', lat: 19.2452, lon: -103.7241, keywords: ['colima'] },
-  { label: 'Manzanillo, Colima, Mexico', lat: 19.1138, lon: -104.3385, keywords: ['manzanillo', 'puerto de manzanillo'] },
-  { label: 'Durango, Durango, Mexico', lat: 24.0277, lon: -104.6532, keywords: ['durango'] },
-  { label: 'Gomez Palacio, Durango, Mexico', lat: 25.5700, lon: -103.5000, keywords: ['gomez palacio', 'laguna durango'] },
-  { label: 'Toluca, Estado de Mexico, Mexico', lat: 19.2826, lon: -99.6557, keywords: ['toluca', 'edomex', 'estado de mexico'] },
-  { label: 'Naucalpan, Estado de Mexico, Mexico', lat: 19.4753, lon: -99.2373, keywords: ['naucalpan', 'interlomas', 'satelite'] },
-  { label: 'Leon, Guanajuato, Mexico', lat: 21.1222, lon: -101.6850, keywords: ['leon', 'guanajuato'] },
-  { label: 'Irapuato, Guanajuato, Mexico', lat: 20.6767, lon: -101.3563, keywords: ['irapuato', 'fresas'] },
   { label: 'Acapulco, Guerrero, Mexico', lat: 16.8531, lon: -99.8237, keywords: ['acapulco', 'guerrero'] },
   { label: 'Chilpancingo, Guerrero, Mexico', lat: 17.5515, lon: -99.5006, keywords: ['chilpancingo'] },
   { label: 'Pachuca, Hidalgo, Mexico', lat: 20.1011, lon: -98.7591, keywords: ['pachuca', 'hidalgo'] },
@@ -647,9 +746,7 @@ const MEXICO_KEYWORD_PLACES = [
   { label: 'Valladolid, Yucatan, Mexico', lat: 20.6906, lon: -88.2019, keywords: ['valladolid yucatan'] },
   { label: 'Zacatecas, Zacatecas, Mexico', lat: 22.7709, lon: -102.5832, keywords: ['zacatecas'] },
   { label: 'Fresnillo, Zacatecas, Mexico', lat: 23.1753, lon: -102.8692, keywords: ['fresnillo'] }
-];a
-
-const MEXICO_GOLF_CLUBS = [
+];
   { label: 'Club de Golf Chapultepec, Naucalpan, Estado de Mexico, Mexico', lat: 19.4356, lon: -99.2403, keywords: ['club de golf chapultepec', 'chapultepec golf', 'naucalpan golf'] },
   { label: 'Club de Golf Mexico, Tlalpan, Ciudad de Mexico, Mexico', lat: 19.2917, lon: -99.1443, keywords: ['club de golf mexico', 'golf mexico cdmx'] },
   { label: 'Club de Golf Bellavista, Atizapan, Estado de Mexico, Mexico', lat: 19.5510, lon: -99.2412, keywords: ['club de golf bellavista', 'bellavista golf'] },
@@ -727,167 +824,7 @@ const MEXICO_GOLF_CLUBS = [
   { label: 'Yucatan Country Club, Merida, Yucatan, Mexico', lat: 21.0841, lon: -89.7226, keywords: ['yucatan country club', 'golf merida'] },
   { label: 'Club de Golf La Ceiba, Merida, Yucatan, Mexico', lat: 21.0363, lon: -89.6768, keywords: ['la ceiba golf merida', 'club de golf la ceiba'] },
   { label: 'Cancun Country Club El Tinto, Cancun, Quintana Roo, Mexico', lat: 21.0478, lon: -86.8696, keywords: ['el tinto golf', 'cancun country club'] },
-  { label: 'Riviera Cancun Golf Club, Cancun, Quintana Roo, Mexico', lat: 21.0287, lon: -86.8387, keywords: ['riviera cancun golf', 'golf cancun'] },
-  { label: 'Mayakoba El Camaleon Golf Course, Playa del Carmen, Quintana Roo, Mexico', lat: 20.7168, lon: -87.0248, keywords: ['el camaleon', 'mayakoba golf', 'playa del carmen golf'] },
-  { label: 'Iberostar Playa Paraiso Golf Club, Playa del Carmen, Quintana Roo, Mexico', lat: 20.7296, lon: -86.9914, keywords: ['iberostar golf', 'playa paraiso golf'] },
-  { label: 'Puerto Cancun Golf Course, Cancun, Quintana Roo, Mexico', lat: 21.1536, lon: -86.8031, keywords: ['puerto cancun golf', 'golf puerto cancun'] },
-  { label: 'Campo de Golf Fonatur, San Jose del Cabo, Baja California Sur, Mexico', lat: 23.0609, lon: -109.7014, keywords: ['fonatur golf', 'san jose del cabo golf'] },
-  { label: 'Club Campestre San Jose, San Jose del Cabo, Baja California Sur, Mexico', lat: 23.0576, lon: -109.7089, keywords: ['campestre san jose', 'san jose country club'] },
-  { label: 'Cabo del Sol Golf, Cabo San Lucas, Baja California Sur, Mexico', lat: 22.9738, lon: -109.8602, keywords: ['cabo del sol', 'golf cabo san lucas'] },
-  { label: 'Palmilla Golf Club, San Jose del Cabo, Baja California Sur, Mexico', lat: 23.0358, lon: -109.7051, keywords: ['palmilla golf', 'club de golf palmilla'] },
-  { label: 'Vidanta Golf Nuevo Vallarta, Bahia de Banderas, Nayarit, Mexico', lat: 20.7008, lon: -105.3021, keywords: ['vidanta golf', 'nuevo vallarta golf'] },
-  { label: 'Marina Vallarta Golf Club, Puerto Vallarta, Jalisco, Mexico', lat: 20.6769, lon: -105.2530, keywords: ['marina vallarta golf', 'golf puerto vallarta'] },
-  { label: 'Club Campestre Queretaro, Queretaro, Queretaro, Mexico', lat: 20.6187, lon: -100.3881, keywords: ['campestre queretaro', 'club campestre queretaro'] },
-  { label: 'Juriquilla Golf Club, Queretaro, Queretaro, Mexico', lat: 20.7119, lon: -100.4461, keywords: ['juriquilla golf', 'club de golf juriquilla'] },
-  { label: 'El Campanario Country Club, Queretaro, Queretaro, Mexico', lat: 20.6335, lon: -100.3438, keywords: ['el campanario golf', 'campanario country club'] },
-  { label: 'Campestre Torreon, Torreon, Coahuila, Mexico', lat: 25.5390, lon: -103.4308, keywords: ['campestre torreon', 'club campestre torreon'] },
-  { label: 'Club Campestre Chihuahua, Chihuahua, Chihuahua, Mexico', lat: 28.6674, lon: -106.1068, keywords: ['campestre chihuahua', 'club campestre chihuahua'] },
-  { label: 'Club Campestre Tijuana, Tijuana, Baja California, Mexico', lat: 32.4939, lon: -116.9977, keywords: ['campestre tijuana', 'club campestre tijuana'] }
-];
-
-const GENERIC_PLACE_KEYWORDS = ['aeropuerto', 'airport', 'terminal', 'central', 'hotel', 'hoteles', 'resort', 'hospital', 'clinica', 'restaurante', 'restaurantes', 'plaza', 'plazas', 'centro comercial', 'club', 'club de golf', 'country club', 'campo de golf', 'golf', 'universidad', 'playa', 'puerto', 'zona industrial'];
-const GENERIC_PLACE_CATEGORIES = ['Hoteles', 'Terminales de autobuses', 'Restaurantes', 'Plazas comerciales', 'Aeropuertos', 'Hospitales', 'Universidades'];
-
-function normalizeSearchText(value){
-  return (value || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-}
-
-function keywordMatch(queryNorm, values){
-  if (!queryNorm) return false;
-  const qWords = queryNorm.split(/\s+/).filter(Boolean);
-  return values.some((value) => {
-    const vNorm = normalizeSearchText(value);
-    if (!vNorm) return false;
-    if (vNorm.includes(queryNorm) || queryNorm.includes(vNorm)) return true;
-    return qWords.every((word) => vNorm.includes(word));
-  });
-}
-
-function buildMexicoDropdownOptions(){
-  const options = new Set();
-
-  MEXICO_STATE_SUGGESTIONS.forEach((item) => {
-    options.add(item.state);
-    options.add(item.capital);
-    options.add(`${item.capital}, ${item.state}, Mexico`);
-    GENERIC_PLACE_CATEGORIES.forEach((cat) => {
-      options.add(`${cat} en ${item.capital}, ${item.state}`);
-      options.add(`${cat} en ${item.state}`);
-    });
-  });
-
-  MEXICO_KEYWORD_PLACES.forEach((item) => options.add(item.label));
-  MEXICO_GOLF_CLUBS.forEach((item) => options.add(item.label));
-
-  return Array.from(options).filter(Boolean);
-}
-
-const MEXICO_DROPDOWN_OPTIONS = buildMexicoDropdownOptions();
-
-function attachFallbackDatalist(input){
-  if (!input || !input.id) return;
-  const listId = `${input.id}-mx-list`;
-  let datalist = document.getElementById(listId);
-
-  if (!datalist) {
-    datalist = document.createElement('datalist');
-    datalist.id = listId;
-    document.body.appendChild(datalist);
-  }
-
-  if (!datalist.dataset.ready) {
-    MEXICO_DROPDOWN_OPTIONS.forEach((value) => {
-      const option = document.createElement('option');
-      option.value = value;
-      datalist.appendChild(option);
-    });
-    datalist.dataset.ready = '1';
-  }
-
-  input.setAttribute('list', listId);
-}
-
-function findLocalPlaceByText(text){
-  const qNorm = normalizeSearchText(text);
-  if (!qNorm) return null;
-
-  for (const item of MEXICO_KEYWORD_PLACES) {
-    const values = [item.label, ...(item.keywords || [])];
-    if (values.some((v) => normalizeSearchText(v) === qNorm)) {
-      return { label: item.label, lat: item.lat, lon: item.lon };
-    }
-  }
-
-  for (const item of MEXICO_GOLF_CLUBS) {
-    const values = [item.label, ...(item.keywords || [])];
-    if (values.some((v) => normalizeSearchText(v) === qNorm)) {
-      return { label: item.label, lat: item.lat, lon: item.lon };
-    }
-  }
-
-  for (const item of MEXICO_STATE_SUGGESTIONS) {
-    const label = `${item.capital}, ${item.state}, Mexico`;
-    const values = [label, item.state, item.capital, ...(item.aliases || [])];
-    if (values.some((v) => normalizeSearchText(v) === qNorm)) {
-      return { label, lat: item.lat, lon: item.lon };
-    }
-  }
-
-  return null;
-}
-
-function applyLocalPlaceIfExact(value, tipo){
-  const local = findLocalPlaceByText(value);
-  if (!local) return false;
-  if (tipo === 'origen') setOrigenCoord(local.lat, local.lon, local.label);
-  if (tipo === 'destino') setDestinoCoord(local.lat, local.lon, local.label);
-  return true;
-}
-
-function buildMexicoQueries(query){
-  const q = (query || '').trim();
-  if (!q) return [];
-
-  const normalized = normalizeSearchText(q);
-  const isMexicoMentioned = /\bmex(ico)?\b|\bcdmx\b|\bedomex\b/.test(normalized);
-  const hasGenericHint = GENERIC_PLACE_KEYWORDS.some((k) => normalized.includes(normalizeSearchText(k)));
-
-  const queries = [];
-  queries.push(q);
-
-  if (!isMexicoMentioned) {
-    queries.push(`${q}, Mexico`);
-  }
-
-  if (hasGenericHint) {
-    queries.push(`${q}, Mexico, MX`);
-  }
-
-  return Array.from(new Set(queries));
-}
-
-
-
-async function initMap(){
-  map = new google.maps.Map(document.getElementById('map'), {
-    center:{lat:23.5,lng:-102.0},
-    zoom:5,
-    disableDefaultUI:true,
-    zoomControl:true,
-    gestureHandling:'greedy',
-    styles:[
-      {elementType:'geometry',stylers:[{color:'#f0f0f0'}]},
-      {elementType:'labels.text.fill',stylers:[{color:'#333333'}]},
-      {elementType:'labels.text.stroke',stylers:[{color:'#ffffff'}]},
-      {featureType:'administrative',elementType:'geometry.stroke',stylers:[{color:'#cccccc'}]},
-      {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},
-      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#ffcc00'}]},
-      {featureType:'road.arterial',elementType:'geometry',stylers:[{color:'#f5f5f5'}]},
-      {featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#666666'}]},
+  { label: 'Riviera
       {featureType:'water',elementType:'geometry',stylers:[{color:'#b3d9ff'}]}
     ]
   });
