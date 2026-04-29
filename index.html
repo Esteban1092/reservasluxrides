@@ -290,29 +290,32 @@
 
 
       <button type="button" id="calcular-precio" class="btn-dorado">Calcular precio</button>
-          .btn-dorado {
-            background: linear-gradient(90deg, #bfa046 60%, #ffe082 100%);
-            color: #181818;
-            font-weight: 800;
-            border: none;
-            border-radius: 10px;
-            padding: 14px 0;
-            font-size: 1.13em;
-            letter-spacing: 1px;
-            box-shadow: 0 2px 12px rgba(191,160,70,0.18);
-            margin-top: 10px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            width: 100%;
-            outline: none;
-          }
-          .btn-dorado:hover, .btn-dorado:focus {
-            background: linear-gradient(90deg, #ffe082 60%, #bfa046 100%);
-            color: #1a237e;
-            box-shadow: 0 4px 18px rgba(191,160,70,0.28);
-          }
       <div class="precio" id="precio"></div>
+            <!-- Sección de chofer asignado -->
+            <div id="chofer-asignado" style="display:none;margin-top:14px;padding:12px 8px 10px 8px;background:rgba(34,34,34,0.93);border-radius:10px;border:1.5px solid #bfa046;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <img id="chofer-foto" src="https://cdn-icons-png.flaticon.com/512/194/194938.png" alt="Foto chofer" style="width:48px;height:48px;border-radius:50%;border:2px solid #bfa046;background:#fff;object-fit:cover;">
+                <div>
+                  <div id="chofer-nombre" style="font-weight:700;font-size:1.1em;color:#ffe082;">Nombre Chofer</div>
+                  <div id="chofer-auto" style="font-size:0.97em;">Auto: <span id="chofer-auto-detalle">-</span></div>
+                  <div id="chofer-placas" style="font-size:0.97em;">Placas: <span id="chofer-placas-detalle">-</span></div>
+                </div>
+              </div>
+              <div id="chofer-estado" style="margin-top:8px;font-size:0.97em;color:#bfa046;">En camino a tu ubicación...</div>
+              <div style="display:flex;gap:10px;margin-top:12px;">
+                <button type="button" id="finalizar-viaje" style="flex:1;background:#388e3c;color:#fff;font-weight:700;border:none;border-radius:8px;padding:10px 0;cursor:pointer;">Finalizar viaje</button>
+                <button type="button" id="cancelar-viaje" style="flex:1;background:#e53935;color:#fff;font-weight:700;border:none;border-radius:8px;padding:10px 0;cursor:pointer;">Cancelar viaje</button>
+              </div>
+            </div>
+          <style>
+            .chofer-marker {
+              width: 36px;
+              height: 36px;
+              background: url('https://cdn-icons-png.flaticon.com/512/61/61231.png') no-repeat center center / contain;
+              border-radius: 50%;
+              border: 2px solid #bfa046;
+            }
+          </style>
       <div class="bottom-buttons">
         <a href="https://linkdenegocio.mx/Luxridesreservas.com" target="_blank">Pagar con Clip</a>
         <button id="whatsapp-btn" type="button">Confirmar por WhatsApp</button>
@@ -475,6 +478,69 @@
     }
     // --- Cálculo de precio ---
     function calcularPrecio() {
+        // Simulación de asignación de chofer tras calcular precio
+        mostrarChoferAsignado();
+          // Mostrar sección de chofer asignado y simular datos
+          function mostrarChoferAsignado() {
+            const choferDiv = document.getElementById('chofer-asignado');
+            choferDiv.style.display = 'block';
+            // Simulación de datos
+            document.getElementById('chofer-nombre').innerText = 'Carlos Ramírez';
+            document.getElementById('chofer-auto-detalle').innerText = 'Toyota Camry Negro';
+            document.getElementById('chofer-placas-detalle').innerText = 'ABC-1234';
+            document.getElementById('chofer-foto').src = 'https://randomuser.me/api/portraits/men/32.jpg';
+            document.getElementById('chofer-estado').innerText = 'En camino a tu ubicación...';
+            // Mostrar ruta y marcador de chofer en el mapa (simulado)
+            mostrarRutaChofer();
+          }
+
+          // Simulación de ruta y marcador de chofer
+          let choferMarker = null;
+          function mostrarRutaChofer() {
+            if (!map) return;
+            // Eliminar marcador anterior si existe
+            if (choferMarker) choferMarker.setMap(null);
+            // Ubicación simulada del chofer
+            const ubicacionChofer = { lat: 19.0536, lng: -98.2086 };
+            choferMarker = new google.maps.Marker({
+              position: ubicacionChofer,
+              map,
+              icon: {
+                url: 'https://cdn-icons-png.flaticon.com/512/61/61231.png',
+                scaledSize: new google.maps.Size(36, 36)
+              },
+              title: 'Tu chofer',
+              zIndex: 20
+            });
+            // Centrar el mapa entre chofer y origen
+            const origenInput = document.getElementById('origen');
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: origenInput.value }, function(results, status) {
+              if (status === 'OK' && results[0]) {
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(ubicacionChofer);
+                bounds.extend(results[0].geometry.location);
+                map.fitBounds(bounds);
+              }
+            });
+          }
+
+          // Botones de finalizar/cancelar viaje
+          document.addEventListener('DOMContentLoaded', function() {
+            const finalizarBtn = document.getElementById('finalizar-viaje');
+            const cancelarBtn = document.getElementById('cancelar-viaje');
+            if (finalizarBtn) finalizarBtn.onclick = finalizarViaje;
+            if (cancelarBtn) cancelarBtn.onclick = cancelarViaje;
+          });
+
+          function finalizarViaje() {
+            document.getElementById('chofer-estado').innerText = '¡Viaje finalizado! Gracias por elegirnos.';
+            if (choferMarker) choferMarker.setMap(null);
+          }
+          function cancelarViaje() {
+            document.getElementById('chofer-estado').innerText = 'El viaje ha sido cancelado.';
+            if (choferMarker) choferMarker.setMap(null);
+          }
       const precioDiv = document.getElementById('precio');
       precioDiv.innerText = '';
       const pasajeros = parseInt(document.getElementById('pasajeros').value);
