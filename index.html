@@ -584,6 +584,20 @@
     let ultimoPrecio = 0;
     let ultimoTipoVehiculo = '';
     let ultimaDistancia = 0;
+    // --- Variables para marcadores y ruta ---
+    let origenMarker = null;
+    let destinoMarker = null;
+    let rutaPolyline = null;
+    let paradasMarkers = [];
+
+    function limpiarRutaYMarcadores() {
+      if (origenMarker) { origenMarker.setMap(null); origenMarker = null; }
+      if (destinoMarker) { destinoMarker.setMap(null); destinoMarker = null; }
+      if (rutaPolyline) { rutaPolyline.setMap(null); rutaPolyline = null; }
+      paradasMarkers.forEach(m => m.setMap(null));
+      paradasMarkers = [];
+    }
+
     function calcularPrecio() {
       const precioDiv = document.getElementById('precio');
       precioDiv.innerText = '';
@@ -591,12 +605,108 @@
       let tipoVehiculo = pasajeros > 3 ? 'camioneta' : 'carro';
       let distancia = Math.floor(Math.random() * 30) + 5; // 5 a 35 km
       let precio = 0;
-      const origen = document.getElementById('origen').value.trim().toLowerCase();
-      const destino = document.getElementById('destino').value.trim().toLowerCase();
+      const origen = document.getElementById('origen').value.trim();
+      const destino = document.getElementById('destino').value.trim();
+
+      // Limpiar marcadores y ruta previos
+      limpiarRutaYMarcadores();
+
+      // Mostrar ruta y marcadores si ambos campos están llenos
+      if (origen && destino) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: origen }, function(resultsO, statusO) {
+          if (statusO === 'OK' && resultsO[0]) {
+            const origenLoc = resultsO[0].geometry.location;
+            if (origenMarker) origenMarker.setMap(null);
+            origenMarker = new google.maps.Marker({
+              position: origenLoc,
+              map,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: '#00c853', // verde
+                fillOpacity: 1,
+                strokeColor: '#fff',
+                strokeWeight: 2
+              },
+              title: 'Recogida',
+              zIndex: 10
+            });
+            geocoder.geocode({ address: destino }, function(resultsD, statusD) {
+              if (statusD === 'OK' && resultsD[0]) {
+                const destinoLoc = resultsD[0].geometry.location;
+                if (destinoMarker) destinoMarker.setMap(null);
+                destinoMarker = new google.maps.Marker({
+                  position: destinoLoc,
+                  map,
+                  icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 10,
+                    fillColor: '#e53935', // rojo
+                    fillOpacity: 1,
+                    strokeColor: '#fff',
+                    strokeWeight: 2
+                  },
+                  title: 'Destino',
+                  zIndex: 10
+                });
+                // Paradas intermedias
+                let waypoints = [];
+                paradasMarkers.forEach(m => m.setMap(null));
+                paradasMarkers = [];
+                let paradasTxt = paradas.map((_, idx) => {
+                  const val = document.querySelector(`.parada[data-idx='${idx}']`).value.trim();
+                  if (val) waypoints.push({ location: val, stopover: true });
+                  return val;
+                });
+                // Directions
+                const directionsService = new google.maps.DirectionsService();
+                const directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true, preserveViewport: true });
+                directionsRenderer.setMap(map);
+                directionsService.route({
+                  origin: origen,
+                  destination: destino,
+                  waypoints: waypoints,
+                  travelMode: google.maps.TravelMode.DRIVING
+                }, function(response, status) {
+                  if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                    // Marcar paradas
+                    if (response.routes[0].legs.length > 2) {
+                      for (let i = 1; i < response.routes[0].legs.length - 1; i++) {
+                        const paradaLoc = response.routes[0].legs[i].start_location;
+                        const paradaMarker = new google.maps.Marker({
+                          position: paradaLoc,
+                          map,
+                          icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: '#ffd600', // amarillo
+                            fillOpacity: 1,
+                            strokeColor: '#fff',
+                            strokeWeight: 2
+                          },
+                          title: 'Parada',
+                          zIndex: 9
+                        });
+                        paradasMarkers.push(paradaMarker);
+                      }
+                    }
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+
+      // --- Precio ---
+      const origenLow = origen.toLowerCase();
+      const destinoLow = destino.toLowerCase();
       if (
-        (origen.includes('camino real polanco') &&
-         (destino.includes('terminal 2') || destino.includes('terminal dos')) &&
-         (destino.includes('benito juárez') || destino.includes('aeropuerto') || destino.includes('mexico')))
+        (origenLow.includes('camino real polanco') &&
+         (destinoLow.includes('terminal 2') || destinoLow.includes('terminal dos')) &&
+         (destinoLow.includes('benito juárez') || destinoLow.includes('aeropuerto') || destinoLow.includes('mexico')))
       ) {
         precio = 630;
         precioDiv.innerText = `Precio especial: $${precio} MXN (Camino Real Polanco → Terminal 2)`;
