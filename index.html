@@ -291,6 +291,7 @@
 
       <button type="button" id="calcular-precio" class="btn-dorado">Calcular precio</button>
       <div class="precio" id="precio"></div>
+      <button type="button" id="confirmar-reserva" class="btn-dorado" style="margin-top:10px;">Confirmar reserva</button>
             <!-- Sección de chofer asignado -->
             <div id="chofer-asignado" style="display:none;margin-top:14px;padding:12px 8px 10px 8px;background:rgba(34,34,34,0.93);border-radius:10px;border:1.5px solid #bfa046;">
               <div style="display:flex;align-items:center;gap:12px;">
@@ -346,7 +347,6 @@
   </script>
 
   <script>
-
     // --- Mostrar/Ocultar panel ---
     const panel = document.getElementById('reserva-panel');
     const mostrarBtn = document.getElementById('mostrar-panel-btn');
@@ -364,7 +364,6 @@
     // Mostrar el panel por defecto
     panel.style.display = 'block';
     mostrarBtn.classList.remove('visible');
-
 
     // --- Hacer el panel movible ---
     (function() {
@@ -416,6 +415,28 @@
       });
     }
     window.initMap = initMap;
+
+    // --- Firebase RTDB para choferes ---
+    let choferesDisponibles = [];
+    let choferesData = {};
+    let choferMarker = null;
+    // Cargar choferes disponibles al inicio
+    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js').then(({ getDatabase, ref, onValue }) => {
+      const db = getDatabase();
+      const choferesRef = ref(db, 'choferes');
+      onValue(choferesRef, (snapshot) => {
+        choferesDisponibles = [];
+        choferesData = snapshot.val() || {};
+        for (const id in choferesData) {
+          const ch = choferesData[id];
+          // Solo choferes disponibles
+          if (ch.estado === 'disponible') {
+            choferesDisponibles.push({ id, ...ch });
+          }
+        }
+      });
+    });
+
     window.onload = () => {
       initMap();
       // Panel visible por defecto
@@ -457,6 +478,7 @@
       // WhatsApp
       document.getElementById('whatsapp-btn').onclick = enviarWhatsApp;
     };
+
     function agregarParada() {
       paradas.push("");
       renderParadas();
@@ -476,81 +498,20 @@
         });
       }, 100);
     }
-    // --- Cálculo de precio ---
+
+    // --- Cálculo de precio (sin asignar chofer) ---
+    let ultimoPrecio = 0;
+    let ultimoTipoVehiculo = '';
+    let ultimaDistancia = 0;
     function calcularPrecio() {
-        // Simulación de asignación de chofer tras calcular precio
-        mostrarChoferAsignado();
-          // Mostrar sección de chofer asignado y simular datos
-          function mostrarChoferAsignado() {
-            const choferDiv = document.getElementById('chofer-asignado');
-            choferDiv.style.display = 'block';
-            // Simulación de datos
-            document.getElementById('chofer-nombre').innerText = 'Carlos Ramírez';
-            document.getElementById('chofer-auto-detalle').innerText = 'Toyota Camry Negro';
-            document.getElementById('chofer-placas-detalle').innerText = 'ABC-1234';
-            document.getElementById('chofer-foto').src = 'https://randomuser.me/api/portraits/men/32.jpg';
-            document.getElementById('chofer-estado').innerText = 'En camino a tu ubicación...';
-            // Mostrar ruta y marcador de chofer en el mapa (simulado)
-            mostrarRutaChofer();
-          }
-
-          // Simulación de ruta y marcador de chofer
-          let choferMarker = null;
-          function mostrarRutaChofer() {
-            if (!map) return;
-            // Eliminar marcador anterior si existe
-            if (choferMarker) choferMarker.setMap(null);
-            // Ubicación simulada del chofer
-            const ubicacionChofer = { lat: 19.0536, lng: -98.2086 };
-            choferMarker = new google.maps.Marker({
-              position: ubicacionChofer,
-              map,
-              icon: {
-                url: 'https://cdn-icons-png.flaticon.com/512/61/61231.png',
-                scaledSize: new google.maps.Size(36, 36)
-              },
-              title: 'Tu chofer',
-              zIndex: 20
-            });
-            // Centrar el mapa entre chofer y origen
-            const origenInput = document.getElementById('origen');
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ address: origenInput.value }, function(results, status) {
-              if (status === 'OK' && results[0]) {
-                const bounds = new google.maps.LatLngBounds();
-                bounds.extend(ubicacionChofer);
-                bounds.extend(results[0].geometry.location);
-                map.fitBounds(bounds);
-              }
-            });
-          }
-
-          // Botones de finalizar/cancelar viaje
-          document.addEventListener('DOMContentLoaded', function() {
-            const finalizarBtn = document.getElementById('finalizar-viaje');
-            const cancelarBtn = document.getElementById('cancelar-viaje');
-            if (finalizarBtn) finalizarBtn.onclick = finalizarViaje;
-            if (cancelarBtn) cancelarBtn.onclick = cancelarViaje;
-          });
-
-          function finalizarViaje() {
-            document.getElementById('chofer-estado').innerText = '¡Viaje finalizado! Gracias por elegirnos.';
-            if (choferMarker) choferMarker.setMap(null);
-          }
-          function cancelarViaje() {
-            document.getElementById('chofer-estado').innerText = 'El viaje ha sido cancelado.';
-            if (choferMarker) choferMarker.setMap(null);
-          }
       const precioDiv = document.getElementById('precio');
       precioDiv.innerText = '';
       const pasajeros = parseInt(document.getElementById('pasajeros').value);
       let tipoVehiculo = pasajeros > 3 ? 'camioneta' : 'carro';
-      // Simulación de distancia (en km) para demo
       let distancia = Math.floor(Math.random() * 30) + 5; // 5 a 35 km
       let precio = 0;
       const origen = document.getElementById('origen').value.trim().toLowerCase();
       const destino = document.getElementById('destino').value.trim().toLowerCase();
-      // Condición especial Camino Real Polanco a Terminal 2
       if (
         (origen.includes('camino real polanco') &&
          (destino.includes('terminal 2') || destino.includes('terminal dos')) &&
@@ -558,6 +519,9 @@
       ) {
         precio = 630;
         precioDiv.innerText = `Precio especial: $${precio} MXN (Camino Real Polanco → Terminal 2)`;
+        ultimoPrecio = precio;
+        ultimoTipoVehiculo = tipoVehiculo;
+        ultimaDistancia = distancia;
         return;
       }
       if (tipoVehiculo === 'carro') {
@@ -567,10 +531,127 @@
         if (distancia <= 4) precio = 320;
         else precio = 320 + (distancia - 4) * 45;
       }
-      // Aplicar descuento del 10%
       precio = Math.round(precio * 0.9);
       precioDiv.innerText = `Precio estimado: $${precio} MXN (${tipoVehiculo}, ${distancia} km)`;
+      ultimoPrecio = precio;
+      ultimoTipoVehiculo = tipoVehiculo;
+      ultimaDistancia = distancia;
     }
+
+    // --- Mostrar chofer asignado solo si el despacho lo asigna ---
+    let reservaIdActual = null;
+    function mostrarChoferAsignado(reserva) {
+      const choferDiv = document.getElementById('chofer-asignado');
+      if (!reserva || !reserva.choferId || !choferesData[reserva.choferId]) {
+        choferDiv.style.display = 'none';
+        return;
+      }
+      choferDiv.style.display = 'block';
+      const chofer = choferesData[reserva.choferId];
+      document.getElementById('chofer-nombre').innerText = chofer.nombre || 'Sin nombre';
+      document.getElementById('chofer-auto-detalle').innerText = chofer.auto || (chofer.hotel ? 'Hotel: ' + chofer.hotel : '-');
+      document.getElementById('chofer-placas-detalle').innerText = chofer.placas || '-';
+      document.getElementById('chofer-foto').src = chofer.foto || 'https://cdn-icons-png.flaticon.com/512/194/194938.png';
+      document.getElementById('chofer-estado').innerText = 'En camino a tu ubicación...';
+      mostrarRutaChofer(chofer);
+      // Botones de finalizar/cancelar viaje
+      const finalizarBtn = document.getElementById('finalizar-viaje');
+      const cancelarBtn = document.getElementById('cancelar-viaje');
+      if (finalizarBtn) finalizarBtn.onclick = finalizarViaje;
+      if (cancelarBtn) cancelarBtn.onclick = cancelarViaje;
+    }
+
+    // --- Mostrar ruta y marcador de chofer real ---
+    function mostrarRutaChofer(chofer) {
+      if (!map) return;
+      if (choferMarker) choferMarker.setMap(null);
+      let ubicacionChofer = { lat: 19.0536, lng: -98.2086 }; // Default
+      if (chofer && chofer.ubicacion && chofer.ubicacion.lat && chofer.ubicacion.lng) {
+        ubicacionChofer = { lat: chofer.ubicacion.lat, lng: chofer.ubicacion.lng };
+      }
+      choferMarker = new google.maps.Marker({
+        position: ubicacionChofer,
+        map,
+        icon: {
+          url: 'https://cdn-icons-png.flaticon.com/512/61/61231.png',
+          scaledSize: new google.maps.Size(36, 36)
+        },
+        title: 'Tu chofer',
+        zIndex: 20
+      });
+      // Centrar el mapa entre chofer y origen
+      const origenInput = document.getElementById('origen');
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: origenInput.value }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(ubicacionChofer);
+          bounds.extend(results[0].geometry.location);
+          map.fitBounds(bounds);
+        }
+      });
+    }
+
+    function finalizarViaje() {
+      document.getElementById('chofer-estado').innerText = '¡Viaje finalizado! Gracias por elegirnos.';
+      if (choferMarker) choferMarker.setMap(null);
+    }
+    function cancelarViaje() {
+      document.getElementById('chofer-estado').innerText = 'El viaje ha sido cancelado.';
+      if (choferMarker) choferMarker.setMap(null);
+    }
+
+    // --- Confirmar reserva y guardar en Firebase ---
+    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js').then(({ getDatabase, ref, push, onValue }) => {
+      const db = getDatabase();
+      document.getElementById('confirmar-reserva').onclick = async function() {
+        // Validar campos
+        const usuario = document.getElementById('usuario').value;
+        const tipoServicio = document.getElementById('tipo-servicio').value;
+        const horas = document.getElementById('horas-servicio').value;
+        const origen = document.getElementById('origen').value;
+        const destino = document.getElementById('destino').value;
+        const fecha = document.getElementById('fecha').value;
+        const hora = document.getElementById('hora').value;
+        const ampm = document.querySelector('.am-pm-btn.selected').dataset.value;
+        const pasajeros = document.getElementById('pasajeros').value;
+        let paradasTxt = paradas.map((_, idx) => document.querySelector(`.parada[data-idx='${idx}']`).value).filter(Boolean);
+        if (!usuario || !origen || !destino || !fecha || !hora) {
+          alert('Por favor, completa todos los campos obligatorios.');
+          return;
+        }
+        // Guardar reserva
+        const reservasRef = ref(db, 'reservas');
+        const nuevaReserva = {
+          usuario,
+          tipoServicio,
+          horas,
+          origen,
+          destino,
+          fecha,
+          hora,
+          ampm,
+          pasajeros,
+          paradas: paradasTxt,
+          precio: ultimoPrecio,
+          tipoVehiculo: ultimoTipoVehiculo,
+          distancia: ultimaDistancia,
+          estado: 'pendiente',
+          creadoEn: new Date().toISOString(),
+          choferId: null
+        };
+        const res = await push(reservasRef, nuevaReserva);
+        reservaIdActual = res.key;
+        alert('¡Reserva enviada! El despacho asignará un chofer.');
+        // Escuchar cambios en la reserva para mostrar chofer asignado
+        const miReservaRef = ref(db, 'reservas/' + reservaIdActual);
+        onValue(miReservaRef, (snap) => {
+          const reserva = snap.val();
+          mostrarChoferAsignado(reserva);
+        });
+      };
+    });
+
     // --- WhatsApp ---
     function enviarWhatsApp() {
       const usuario = document.getElementById('usuario').value;
