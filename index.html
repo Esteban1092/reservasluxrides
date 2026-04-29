@@ -67,23 +67,26 @@
       background: #000;
     }
     .container {
+      z-index: 100 !important;
       position: fixed;
       top: 40px;
       left: 40px;
-      width: 270px;
-      max-width: 90vw;
-      background: rgba(24, 24, 24, 0.82);
+      width: 220px;
+      min-width: 180px;
+      max-width: 92vw;
+      min-height: 120px;
+      max-height: 60vh;
+      background: rgba(24, 24, 24, 0.88);
       border-radius: 18px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-      padding: 24px 14px 18px 14px;
-      z-index: 10;
+      padding: 14px 10px 14px 10px;
       color: #fff;
       border: 2px solid #bfa046;
       overflow-y: auto;
       cursor: move;
-      max-height: 85vh;
       transition: box-shadow 0.2s;
       backdrop-filter: blur(6px);
+      resize: both;
     }
     .container:active {
       box-shadow: 0 12px 40px rgba(0,0,0,0.28);
@@ -207,18 +210,21 @@
     @media (max-width: 900px) {
       .container {
         position: fixed;
-        width: 94vw;
-        left: 2vw;
+        width: 90vw;
+        left: 5vw;
         top: 10px;
-        height: auto;
-        border-radius: 12px;
+        min-width: 140px;
+        max-width: 96vw;
+        min-height: 100px;
+        max-height: 55vh;
+        border-radius: 14px;
         box-shadow: 0 4px 18px rgba(0,0,0,0.13);
         padding: 8px 2vw 12px 2vw;
         border: 2px solid #bfa046;
-        max-height: 80vh;
         overflow-y: auto;
-        background: rgba(24,24,24,0.82);
+        background: rgba(24,24,24,0.88);
         backdrop-filter: blur(6px);
+        resize: both;
       }
       #map {
         position: fixed;
