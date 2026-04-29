@@ -289,7 +289,29 @@
 
 
 
-      <button type="button" id="calcular-precio" style="background:#232323;color:#bfa046;font-weight:700;">Calcular precio</button>
+      <button type="button" id="calcular-precio" class="btn-dorado">Calcular precio</button>
+          .btn-dorado {
+            background: linear-gradient(90deg, #bfa046 60%, #ffe082 100%);
+            color: #181818;
+            font-weight: 800;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 0;
+            font-size: 1.13em;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 12px rgba(191,160,70,0.18);
+            margin-top: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            width: 100%;
+            outline: none;
+          }
+          .btn-dorado:hover, .btn-dorado:focus {
+            background: linear-gradient(90deg, #ffe082 60%, #bfa046 100%);
+            color: #1a237e;
+            box-shadow: 0 4px 18px rgba(191,160,70,0.28);
+          }
       <div class="precio" id="precio"></div>
       <div class="bottom-buttons">
         <a href="https://linkdenegocio.mx/Luxridesreservas.com" target="_blank">Pagar con Clip</a>
@@ -453,6 +475,8 @@
     }
     // --- Cálculo de precio ---
     function calcularPrecio() {
+      const precioDiv = document.getElementById('precio');
+      precioDiv.innerText = '';
       const pasajeros = parseInt(document.getElementById('pasajeros').value);
       let tipoVehiculo = pasajeros > 3 ? 'camioneta' : 'carro';
       // Simulación de distancia (en km) para demo
@@ -467,7 +491,7 @@
          (destino.includes('benito juárez') || destino.includes('aeropuerto') || destino.includes('mexico')))
       ) {
         precio = 630;
-        document.getElementById('precio').innerText = `Precio especial: $${precio} MXN (Camino Real Polanco → Terminal 2)`;
+        precioDiv.innerText = `Precio especial: $${precio} MXN (Camino Real Polanco → Terminal 2)`;
         return;
       }
       if (tipoVehiculo === 'carro') {
@@ -479,7 +503,7 @@
       }
       // Aplicar descuento del 10%
       precio = Math.round(precio * 0.9);
-      document.getElementById('precio').innerText = `Precio estimado: $${precio} MXN (${tipoVehiculo}, ${distancia} km)`;
+      precioDiv.innerText = `Precio estimado: $${precio} MXN (${tipoVehiculo}, ${distancia} km)`;
     }
     // --- WhatsApp ---
     function enviarWhatsApp() {
