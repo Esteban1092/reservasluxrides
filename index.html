@@ -141,6 +141,46 @@
       transform: translateY(-2px) scale(1.04);
     }
     .bottom-buttons a:active, .bottom-buttons button:active {
+          .bottom-buttons a[disabled], .bottom-buttons button[disabled] {
+            opacity: 0.5 !important;
+            filter: grayscale(0.3) brightness(0.95);
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            background: #bfa046 !important;
+            color: #fff !important;
+          }
+          // --- Validación dinámica de botones ---
+          function validarBotonesReserva() {
+            const nombre = document.getElementById('usuario').value.trim();
+            const origen = document.getElementById('origen').value.trim();
+            const destino = document.getElementById('destino').value.trim();
+            const btnClip = document.querySelector('.bottom-buttons a');
+            const btnWhats = document.getElementById('whatsapp-btn');
+            const camposOk = nombre && origen && destino;
+            if (btnClip) btnClip.disabled = !camposOk;
+            if (btnWhats) btnWhats.disabled = !camposOk;
+          }
+          // Eventos para validar en tiempo real
+          document.addEventListener('DOMContentLoaded', function() {
+            ['usuario','origen','destino','pasajeros'].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) {
+                el.addEventListener('input', validarBotonesReserva);
+                // Limpiar precio y variables al cambiar campos clave
+                if (id !== 'usuario') {
+                  el.addEventListener('input', function() {
+                    ultimoPrecio = 0;
+                    ultimoTipoVehiculo = '';
+                    ultimaDistancia = 0;
+                    const precioDiv = document.getElementById('precio');
+                    if (precioDiv) precioDiv.innerText = '';
+                  });
+                }
+              }
+            });
+            validarBotonesReserva();
+          });
       background: linear-gradient(90deg, #bfa046 0%, #ffe082 100%) !important;
       color: #181818 !important;
       box-shadow: 0 2px 8px 0 rgba(191,160,70,0.13) !important;
