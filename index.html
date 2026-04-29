@@ -103,35 +103,65 @@
       margin-top: 18px;
     }
     .bottom-buttons a, .bottom-buttons button {
-      background: linear-gradient(90deg, #bfa046 0%, #ffe082 100%);
-      color: #181818;
-      border: none;
-      border-radius: 12px;
-      padding: 15px 0;
-      font-size: 1.13rem;
-      text-align: center;
-      text-decoration: none;
-      font-weight: 800;
-      letter-spacing: 0.7px;
-      box-shadow: 0 4px 18px 0 rgba(191,160,70,0.18), 0 1.5px 0 #fff inset;
-      cursor: pointer;
+      background: linear-gradient(90deg, #bfa046 0%, #ffe082 100%) !important;
+      color: #181818 !important;
+      border: none !important;
+      border-radius: 14px !important;
+      padding: 16px 0 16px 0 !important;
+      font-size: 1.18rem !important;
+      text-align: center !important;
+      text-decoration: none !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.8px !important;
+      box-shadow: 0 6px 24px 0 rgba(191,160,70,0.22), 0 2px 0 #fff8 inset !important;
+      cursor: pointer !important;
       transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.12s;
-      outline: none;
+      outline: none !important;
       position: relative;
       overflow: hidden;
-      text-shadow: 0 1px 0 #fff8, 0 0.5px 0 #bfa04688;
+      text-shadow: 0 1.5px 0 #fff8, 0 1px 0 #bfa04688;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .bottom-buttons a::before, .bottom-buttons button::before {
+      content: '\1F451'; /* corona dorada */
+      font-size: 1.3em;
+      margin-right: 10px;
+      color: #ffd700;
+      filter: drop-shadow(0 0 2px #fff8);
+      vertical-align: middle;
+      transition: transform 0.18s;
     }
     .bottom-buttons a:hover, .bottom-buttons button:hover {
-      background: linear-gradient(90deg, #ffe082 0%, #bfa046 100%);
-      color: #1a237e;
-      box-shadow: 0 6px 24px 0 rgba(191,160,70,0.28), 0 2px 0 #fff inset;
-      transform: translateY(-2px) scale(1.03);
+      background: linear-gradient(90deg, #ffe082 0%, #bfa046 100%) !important;
+      color: #1a237e !important;
+      box-shadow: 0 10px 32px 0 rgba(191,160,70,0.32), 0 3px 0 #fff inset !important;
+      transform: translateY(-2px) scale(1.04);
     }
     .bottom-buttons a:active, .bottom-buttons button:active {
-      background: linear-gradient(90deg, #bfa046 0%, #ffe082 100%);
-      color: #181818;
-      box-shadow: 0 2px 8px 0 rgba(191,160,70,0.13);
+      background: linear-gradient(90deg, #bfa046 0%, #ffe082 100%) !important;
+      color: #181818 !important;
+      box-shadow: 0 2px 8px 0 rgba(191,160,70,0.13) !important;
       transform: scale(0.98);
+    }
+    /* Efecto de brillo animado */
+    .bottom-buttons a::after, .bottom-buttons button::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -75%;
+      width: 50%; height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.18) 100%);
+      transform: skewX(-25deg);
+      pointer-events: none;
+      z-index: 1;
+      animation: brilloVIP 2.2s infinite linear;
+    }
+    @keyframes brilloVIP {
+      0% { left: -75%; }
+      60% { left: 120%; }
+      100% { left: 120%; }
     }
     label {
       display: block;
