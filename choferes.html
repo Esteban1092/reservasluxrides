@@ -127,6 +127,13 @@
   </style>
 </head>
 <body>
+    <!-- NUEVA SECCIÓN: Reservas asignadas a este chofer (web) -->
+    <section class="card" style="max-width:600px;margin:30px auto 0 auto;">
+      <h2 style="color:#bfa046;margin-bottom:12px;">📝 Mis Reservas Web Asignadas</h2>
+      <div id="mis-reservas-web">
+        <div class="empty">Cargando reservas…</div>
+      </div>
+    </section>
   <div id="login-screen">
     <div class="login-card">
       <h2>LUXRIDES</h2>
@@ -263,6 +270,54 @@
   </div>
 
   <script>
+    // --- Mostrar reservas asignadas a este chofer desde /reservas (web) ---
+    async function cargarMisReservasWeb() {
+      if (!db || !choferID) {
+        document.getElementById('mis-reservas-web').innerHTML = '<div class="empty">Esperando conexión…</div>';
+        return;
+      }
+      try {
+        const snap = await db.ref('reservas').orderByChild('choferId').equalTo(choferID).once('value');
+        const div = document.getElementById('mis-reservas-web');
+        div.innerHTML = '';
+        let count = 0;
+        // Mostrar reservas más recientes primero
+        const reservas = [];
+        snap.forEach(child => reservas.push({ id: child.key, ...child.val() }));
+        reservas.reverse();
+        for (const r of reservas) {
+          count++;
+          div.innerHTML += `
+            <div class="viaje-card" style="margin-bottom:14px;">
+              <span class="status-chip ${r.estado === 'finalizado' ? 'off' : r.estado === 'en viaje' ? 'running' : 'pending'}">${escHtml(r.estado || 'pendiente')}</span>
+              <h3>Reserva web asignada</h3>
+              <p><b>Cliente:</b> ${escHtml(r.usuario || 'Cliente')}</p>
+              <p><b>Origen:</b> ${escHtml(r.origen || '-')}</p>
+              <p><b>Destino:</b> ${escHtml(r.destino || '-')}</p>
+              <p><b>Fecha:</b> ${escHtml(r.fecha || '')} ${escHtml(r.hora || '')} ${escHtml(r.ampm || '')}</p>
+              <p><b>Pasajeros:</b> ${escHtml(r.pasajeros || '')} | <b>Precio:</b> $${escHtml(r.precio || '')}</p>
+            </div>`;
+        }
+        if (count === 0) {
+          div.innerHTML = '<div class="empty">No tienes reservas web asignadas.</div>';
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('mis-reservas-web').innerHTML = '<div class="empty">Error al leer reservas.</div>';
+      }
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Llamar al cargar la app y cuando el chofer inicia sesión
+    setTimeout(() => { if (typeof choferID !== 'undefined' && choferID) cargarMisReservasWeb(); }, 2000);
     const firebaseConfig = {
       apiKey: "AIzaSyDlzuMEutA5yDZLpRG62WEuxBQmi6y_tq0",
       authDomain: "luxridesreservas-d5102.firebaseapp.com",
