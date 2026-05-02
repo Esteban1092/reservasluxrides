@@ -111,19 +111,19 @@
     }
     .tarjeta hr{border:none;border-top:1px solid var(--border);margin:10px 0;}
 
-    .assign-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-    .assign-row label{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
-    select.sel-chofer{
-      flex:1;min-width:140px;
-      background:var(--bg);color:var(--fg);
-      border:1px solid var(--border);
-      padding:8px 10px;border-radius:6px;
-      font-family:'Outfit',sans-serif;font-size:0.85rem;
-      outline:none;transition:border-color .2s;
-      cursor:pointer;
-    }
+    .assign-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;}
+    .assign-row label{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding-top:9px;}
+    select.sel-chofer{flex:1;min-width:140px;background:var(--bg);color:var(--fg);border:1px solid var(--border);padding:8px 10px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:0.85rem;outline:none;transition:border-color .2s;cursor:pointer;}
     select.sel-chofer:focus{border-color:var(--gold);}
     select.sel-chofer option{background:#1a1a1a;}
+    .csd-wrap{position:relative;flex:1;min-width:160px;}
+    .csd-input{width:100%;padding:8px 10px;background:#0f0f0f;border:1px solid var(--border);color:var(--fg);border-radius:6px;font-family:'Outfit',sans-serif;font-size:.85rem;outline:none;box-sizing:border-box;transition:border-color .2s;}
+    .csd-input:focus{border-color:var(--gold);}
+    .csd-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1a1a1a;border:1px solid var(--gold);border-radius:8px;max-height:200px;overflow-y:auto;z-index:8000;display:none;box-shadow:0 8px 24px rgba(0,0,0,.6);}
+    .csd-list.open{display:block;}
+    .csd-item{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer;font-size:.84rem;border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s;}
+    .csd-item:last-child{border-bottom:none;}
+    .csd-item:hover,.csd-item.sel{background:rgba(212,175,55,.14);color:var(--gold);}
 
     .btn-despachar{
       background:var(--gold);color:#050505;
@@ -193,6 +193,40 @@
     .totals-item strong{display:block;color:var(--fg);font-size:0.9rem;}
     .totals-item span{display:block;color:var(--muted);font-size:0.76rem;margin-top:2px;}
     .totals-amount{font-weight:700;color:#86efac;white-space:nowrap;}
+
+    /* MODAL VEHÍCULO */
+    #modal-vehiculo{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;}
+    #modal-vehiculo.open{display:flex;}
+    .modal-vehiculo-card{background:#1a1a1a;border:1.5px solid var(--gold);border-radius:16px;padding:26px 22px;width:92%;max-width:420px;position:relative;overflow-y:auto;max-height:90vh;}
+    .modal-vehiculo-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.15rem;margin-bottom:16px;}
+    .modal-vehiculo-card label{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);display:block;margin-bottom:6px;margin-top:12px;}
+    .modal-vehiculo-card input,.modal-vehiculo-card select{width:100%;padding:10px 12px;background:#0f0f0f;border:1px solid var(--border);color:var(--fg);border-radius:7px;font-family:'Outfit',sans-serif;font-size:.9rem;outline:none;box-sizing:border-box;}
+    .modal-vehiculo-card input:focus,.modal-vehiculo-card select:focus{border-color:var(--gold);}
+    .tipo-vehiculo-row{display:flex;gap:10px;margin-bottom:4px;}
+    .tipo-btn{flex:1;padding:14px 8px;border-radius:10px;border:2px solid var(--border);background:#0f0f0f;color:var(--muted);font-size:1.5rem;text-align:center;cursor:pointer;transition:all .2s;}
+    .tipo-btn.activo{border-color:var(--gold);background:rgba(212,175,55,.12);color:var(--gold);}
+    .tipo-btn span{display:block;font-size:.72rem;font-family:'Outfit',sans-serif;margin-top:4px;}
+    .modal-vehiculo-actions{display:flex;gap:10px;margin-top:18px;}
+    .btn-guardar-vehiculo{flex:1;padding:12px;background:var(--gold);color:#050505;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;}
+    .btn-cancelar-vehiculo{flex:0 0 auto;padding:12px 16px;background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4);border-radius:8px;cursor:pointer;font-family:'Outfit',sans-serif;}
+    .chofer-vehiculo{font-size:.74rem;color:#a3a3a3;margin-top:3px;}
+
+    /* MODAL VEHÍCULO */
+    #modal-vehiculo{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;}
+    #modal-vehiculo.open{display:flex;}
+    .modal-vehiculo-card{background:#1a1a1a;border:1.5px solid var(--gold);border-radius:16px;padding:26px 22px;width:92%;max-width:420px;position:relative;}
+    .modal-vehiculo-card h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.15rem;margin-bottom:16px;}
+    .modal-vehiculo-card label{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);display:block;margin-bottom:6px;margin-top:12px;}
+    .modal-vehiculo-card input, .modal-vehiculo-card select{width:100%;padding:10px 12px;background:#0f0f0f;border:1px solid var(--border);color:var(--fg);border-radius:7px;font-family:'Outfit',sans-serif;font-size:.9rem;outline:none;box-sizing:border-box;}
+    .modal-vehiculo-card input:focus, .modal-vehiculo-card select:focus{border-color:var(--gold);}
+    .tipo-vehiculo-row{display:flex;gap:10px;margin-bottom:4px;}
+    .tipo-btn{flex:1;padding:14px 8px;border-radius:10px;border:2px solid var(--border);background:#0f0f0f;color:var(--muted);font-size:1.5rem;text-align:center;cursor:pointer;transition:all .2s;}
+    .tipo-btn.activo{border-color:var(--gold);background:rgba(212,175,55,.12);color:var(--gold);}
+    .tipo-btn span{display:block;font-size:.72rem;font-family:'Outfit',sans-serif;margin-top:4px;}
+    .modal-vehiculo-actions{display:flex;gap:10px;margin-top:18px;}
+    .btn-guardar-vehiculo{flex:1;padding:12px;background:var(--gold);color:#050505;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;}
+    .btn-cancelar-vehiculo{flex:0 0 auto;padding:12px 16px;background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4);border-radius:8px;cursor:pointer;font-family:'Outfit',sans-serif;}
+    .chofer-vehiculo{font-size:.74rem;color:#a3a3a3;margin-top:3px;}
 
     /* MENSAJES VACÍOS */
     .empty{
@@ -291,10 +325,17 @@
     </div>
     <div class="panel-actions">
       <button class="btn-link-panel btn-gold" type="button" onclick="toggleQuickChoferForm()">➕ Agregar chofer aquí</button>
+      <button class="btn-link-panel btn-gold" type="button" onclick="abrirModalVehiculo(null)">🚗 Agregar carro</button>
       <button class="btn-link-panel btn-danger" type="button" onclick="borrarChoferesAdmin()">🗑️ Borrar choferes</button>
       <select id="filtro-hotel" class="sel-filter" onchange="aplicarFiltroHotel(this.value)">
         <option value="TODOS">🏨 Todos los hoteles</option>
       </select>
+    </div>
+    <div style="padding:0 0 8px;">
+      <input id="buscador-choferes" type="text" placeholder="🔍 Buscar por nombre, ID o carro/camioneta…"
+        oninput="renderizarChoferes()"
+        style="width:100%;padding:9px 12px;background:#0f0f0f;border:1px solid var(--border);color:var(--fg);border-radius:8px;font-family:'Outfit',sans-serif;font-size:.88rem;outline:none;box-sizing:border-box;"
+        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"/>
     </div>
     <div id="quick-chofer-form" class="quick-form">
       <div class="quick-row">
@@ -316,8 +357,13 @@
   <div class="monitor-grid">
     <div>
       <div style="position:relative;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <button class="btn-small" id="mapa-tab-todos" onclick="filtrarMapa('todos')" style="background:rgba(212,175,55,0.35);color:var(--gold);">🚦 Todos</button>
+          <button class="btn-small" id="mapa-tab-carro" onclick="filtrarMapa('carro')">🚗 Solo carros</button>
+          <button class="btn-small" id="mapa-tab-camioneta" onclick="filtrarMapa('camioneta')">🚙 Solo camionetas</button>
+        </div>
         <div id="map-choferes"></div>
-        <button type="button" onclick="refrescarMapa()" style="position:absolute;top:10px;right:10px;z-index:10;background:var(--gold);color:#050505;border:none;padding:8px 14px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .2s;">🔄 Refrescar mapa</button>
+        <button type="button" onclick="refrescarMapa()" style="position:absolute;bottom:10px;right:10px;z-index:10;background:var(--gold);color:#050505;border:none;padding:8px 14px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .2s;">🔄 Refrescar mapa</button>
       </div>
     </div>
     <div>
@@ -350,9 +396,45 @@
   </div>
 </div>
 
+<!-- Panel Flota de Vehículos -->
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-title">🚗 Flota de Vehículos</div>
+  <div style="display:flex;gap:12px;margin-bottom:12px;">
+    <button class="btn-small" onclick="mostrarFlota('todos')" id="flota-tab-todos" style="background:rgba(212,175,55,0.35);color:var(--gold);">🚘 Todos</button>
+    <button class="btn-small" onclick="mostrarFlota('carro')" id="flota-tab-carro">🚗 Carros</button>
+    <button class="btn-small" onclick="mostrarFlota('camioneta')" id="flota-tab-camioneta">🚙 Camionetas</button>
+    <button class="btn-small" onclick="mostrarFlota('sin')" id="flota-tab-sin">❌ Sin asignar</button>
+  </div>
+  <div id="lista-flota" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+</div>
+
 </div><!-- /app-content -->
 
 <div id="toast"></div>
+
+<!-- Modal asignar vehículo -->
+<div id="modal-vehiculo">
+  <div class="modal-vehiculo-card">
+    <h3>🚗 Asignar Vehículo</h3>
+    <label>Tipo de vehículo</label>
+    <div class="tipo-vehiculo-row">
+      <div class="tipo-btn activo" id="tipo-carro" onclick="seleccionarTipoVehiculo('carro')">
+        🚗<span>Carro</span>
+      </div>
+      <div class="tipo-btn" id="tipo-camioneta" onclick="seleccionarTipoVehiculo('camioneta')">
+        🚙<span>Camioneta</span>
+      </div>
+    </div>
+    <label>Buscar chofer</label>
+    <input id="mv-buscar-chofer" type="text" placeholder="🔍 Escribe nombre o ID…" oninput="filtrarChoferesModal(this.value)" autocomplete="off"/>
+    <div id="mv-chofer-lista" style="max-height:200px;overflow-y:auto;margin-top:6px;display:flex;flex-direction:column;gap:6px;"></div>
+    <input type="hidden" id="mv-chofer-select" value=""/>
+    <div class="modal-vehiculo-actions">
+      <button class="btn-guardar-vehiculo" onclick="guardarVehiculo()">💾 Guardar</button>
+      <button class="btn-cancelar-vehiculo" onclick="cerrarModalVehiculo()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─────────────────────────────────────────────────────────────
@@ -447,6 +529,7 @@ const geocoderCache = {};
 const rutaClienteChoferCache = {};
 const rutaClienteChoferPendiente = new Set();
 let reservasActivasMapa = {};
+let mapaDebounceTimer = null;
 let historialChoferCallback = null;
 let historialGeneralCallback = null;
 let despachoMessaging = null;
@@ -684,22 +767,27 @@ function iniciarListeners() {
           ${esPendiente ? `
           <div class="assign-row">
             <label>Asignar a:</label>
-            <select class="sel-chofer" id="sel-${child.key}">
-              <option value="">— Seleccionar chofer —</option>
-            </select>
+            <div class="csd-wrap">
+              <input type="text" class="csd-input" id="si-${child.key}" placeholder="🔍 Nombre, ID o vehículo…"
+                oninput="csdFiltrar('${child.key}',this.value)" onfocus="csdAbrir('${child.key}')" autocomplete="off"/>
+              <div class="csd-list" id="sd-${child.key}"></div>
+              <input type="hidden" id="sel-${child.key}" value=""/>
+            </div>
             <button class="btn-despachar" onclick="despachar('${child.key}')">ENVIAR 🚀</button>
           </div>` : ''}
           ${esAsignado ? `
           <div class="assign-row" style="margin-top:8px;">
             <label>↻ Reasignar a:</label>
-            <select class="sel-chofer" id="sel-${child.key}">
-              <option value="">— Otro chofer —</option>
-            </select>
+            <div class="csd-wrap">
+              <input type="text" class="csd-input" id="si-${child.key}" placeholder="🔍 Nombre, ID o vehículo…"
+                oninput="csdFiltrar('${child.key}',this.value)" onfocus="csdAbrir('${child.key}')" autocomplete="off"/>
+              <div class="csd-list" id="sd-${child.key}"></div>
+              <input type="hidden" id="sel-${child.key}" value=""/>
+            </div>
             <button class="btn-despachar" style="background:#3B82F6;color:#fff;" onclick="reasignarChofer('${child.key}')">REASIGNAR ↻</button>
           </div>` : ''}
         </div>`;
 
-      // Populate select with current drivers
       const sel = document.getElementById(`sel-${child.key}`);
       if (sel) poblarSelect(sel);
     });
@@ -717,7 +805,7 @@ function iniciarListeners() {
     // Actualizar estados previos para detectar cambios
     reservaEstadosPrevios = estadosActuales;
 
-    actualizarMapaChoferes();
+    scheduleActualizarMapa();
   });
 
   // 2. CHOFERES
@@ -749,7 +837,8 @@ function iniciarListeners() {
         estado: estadoReal,
         hotel,
         ubicacion,
-        viajeActual: ch.viajeActual || null
+        viajeActual: ch.viajeActual || null,
+        vehiculo_tipo: ch.vehiculo_tipo || ''
       };
     });
 
@@ -759,7 +848,13 @@ function iniciarListeners() {
       estado: ch.estado || 'Desconectado',
       hotel: ch.hotel || '',
       ubicacion: ch.ubicacion || null,
-      viajeActual: ch.viajeActual || null
+      viajeActual: ch.viajeActual || null,
+      vehiculo_tipo:   ch.vehiculo_tipo   || '',
+      vehiculo_marca:  ch.vehiculo_marca  || '',
+      vehiculo_modelo: ch.vehiculo_modelo || '',
+      vehiculo_color:  ch.vehiculo_color  || '',
+      vehiculo_anio:   ch.vehiculo_anio   || '',
+      placa:           ch.placa           || ''
     }));
 
     // Actualizar badge con conteo online/desconectados
@@ -772,7 +867,8 @@ function iniciarListeners() {
     refrescarOpcionesHoteles();
     refrescarSelectPagos();
     renderizarChoferes();
-    actualizarMapaChoferes();
+    renderFlota();
+    scheduleActualizarMapa();
     db.ref('historial').once('value').then(renderizarGananciasTotales).catch(() => {});
 
     // Actualizar todos los selects abiertos
@@ -911,6 +1007,147 @@ function toggleQuickChoferForm() {
   if (!form) return;
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
 }
+
+// ─────────────────────────────────────────────────────────────
+//  MODAL VEHÍCULO
+// ─────────────────────────────────────────────────────────────
+let tipoVehiculoSeleccionado = 'carro';
+
+function abrirModalVehiculo(choferId) {
+  tipoVehiculoSeleccionado = 'carro';
+  seleccionarTipoVehiculo('carro');
+  document.getElementById('mv-buscar-chofer').value = '';
+  document.getElementById('mv-chofer-select').value = '';
+  renderChoferesModal('', choferId);
+
+  // Si viene con choferId, preseleccionar y precargar tipo
+  if (choferId) {
+    const chofer = choferesLista.find(c => c.id === choferId);
+    if (chofer) {
+      document.getElementById('mv-chofer-select').value = choferId;
+      document.getElementById('mv-buscar-chofer').value = `${chofer.nombre} (${chofer.id})`;
+      if (chofer.vehiculo_tipo) seleccionarTipoVehiculo(chofer.vehiculo_tipo);
+    }
+  }
+
+  document.getElementById('modal-vehiculo').classList.add('open');
+  setTimeout(() => document.getElementById('mv-buscar-chofer').focus(), 120);
+}
+
+function renderChoferesModal(filtroTexto, seleccionado) {
+  const lista = document.getElementById('mv-chofer-lista');
+  const q = filtroTexto.trim().toLowerCase();
+  const filtrados = q
+    ? choferesLista.filter(ch => ch.nombre.toLowerCase().includes(q) || ch.id.toLowerCase().includes(q))
+    : choferesLista;
+
+  if (!filtrados.length) {
+    lista.innerHTML = '<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:8px;">Sin resultados</div>';
+    return;
+  }
+
+  lista.innerHTML = filtrados.map(ch => {
+    const activo = (document.getElementById('mv-chofer-select').value === ch.id) || (seleccionado === ch.id && !filtroTexto);
+    const emoji = ch.vehiculo_tipo === 'camioneta' ? '🚙' : ch.vehiculo_tipo === 'carro' ? '🚗' : '❓';
+    return `<div
+      onclick="seleccionarChoferModal('${ch.id}','${escHtml(ch.nombre)}')"
+      style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;cursor:pointer;border:1.5px solid ${activo ? 'var(--gold)' : 'var(--border)'};background:${activo ? 'rgba(212,175,55,.12)' : '#0f0f0f'};transition:all .15s;">
+      <span style="font-size:1.3rem;">${emoji}</span>
+      <div>
+        <div style="font-size:.88rem;font-weight:600;">${escHtml(ch.nombre)}</div>
+        <div style="font-size:.72rem;color:var(--muted);">ID: ${escHtml(ch.id)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarChoferesModal(q) {
+  renderChoferesModal(q, null);
+}
+
+function seleccionarChoferModal(id, nombre) {
+  document.getElementById('mv-chofer-select').value = id;
+  document.getElementById('mv-buscar-chofer').value = `${nombre} (${id})`;
+  renderChoferesModal('', null);
+  // re-render limpio mostrando solo el seleccionado resaltado
+  const lista = document.getElementById('mv-chofer-lista');
+  lista.querySelectorAll('div[onclick]').forEach(el => {
+    const isSelected = el.getAttribute('onclick').includes(`'${id}'`);
+    el.style.borderColor = isSelected ? 'var(--gold)' : 'var(--border)';
+    el.style.background  = isSelected ? 'rgba(212,175,55,.12)' : '#0f0f0f';
+  });
+
+  const chofer = choferesLista.find(c => c.id === id);
+  if (chofer && chofer.vehiculo_tipo) seleccionarTipoVehiculo(chofer.vehiculo_tipo);
+}
+
+function cerrarModalVehiculo() {
+  document.getElementById('modal-vehiculo').classList.remove('open');
+}
+
+function seleccionarTipoVehiculo(tipo) {
+  tipoVehiculoSeleccionado = tipo;
+  document.getElementById('tipo-carro').classList.toggle('activo', tipo === 'carro');
+  document.getElementById('tipo-camioneta').classList.toggle('activo', tipo === 'camioneta');
+}
+
+async function guardarVehiculo() {
+  const choferId = document.getElementById('mv-chofer-select').value;
+  if (!choferId) { showToast('⚠️ Selecciona un chofer.', true); return; }
+
+  try {
+    await db.ref('choferes/' + choferId).update({
+      vehiculo_tipo: tipoVehiculoSeleccionado,
+      vehiculo_actualizado_en: new Date().toISOString()
+    });
+    cerrarModalVehiculo();
+    const nombreChofer = (choferesLista.find(c => c.id === choferId)?.nombre) || choferId;
+    showToast(`✅ ${nombreChofer}: ${tipoVehiculoSeleccionado === 'camioneta' ? '🚙 Camioneta' : '🚗 Carro'} asignado.`);
+  } catch (err) {
+    console.error(err);
+    showToast('❌ No se pudo guardar: ' + err.message, true);
+  }
+}
+
+let flotaFiltro = 'todos';
+function mostrarFlota(filtro) {
+  flotaFiltro = filtro;
+  ['todos','carro','camioneta','sin'].forEach(f => {
+    const btn = document.getElementById('flota-tab-' + f);
+    if (btn) btn.style.background = f === filtro ? 'rgba(212,175,55,0.35)' : '';
+  });
+  renderFlota();
+}
+
+function renderFlota() {
+  const lista = document.getElementById('lista-flota');
+  if (!lista) return;
+  const filtrados = choferesLista.filter(ch => {
+    if (flotaFiltro === 'todos') return true;
+    if (flotaFiltro === 'sin') return !ch.vehiculo_tipo;
+    return ch.vehiculo_tipo === flotaFiltro;
+  });
+  if (!filtrados.length) {
+    lista.innerHTML = '<div class="empty" style="grid-column:1/-1"><span>🚫</span>Sin vehículos en esta categoría</div>';
+    return;
+  }
+  lista.innerHTML = filtrados.map(ch => `
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:2.2rem;">${ch.vehiculo_tipo === 'camioneta' ? '🚙' : ch.vehiculo_tipo === 'carro' ? '🚗' : '❓'}</div>
+      <div style="font-weight:600;margin:6px 0 2px;">${escHtml(ch.nombre)}</div>
+      <div style="font-size:.75rem;color:var(--muted);">ID: ${escHtml(ch.id)}</div>
+      <div style="margin-top:6px;font-size:.8rem;color:${ch.vehiculo_tipo ? 'var(--gold)' : '#666'};">
+        ${ch.vehiculo_tipo ? (ch.vehiculo_tipo === 'camioneta' ? '🚙 Camioneta' : '🚗 Carro') : 'Sin vehículo'}
+      </div>
+      <button class="btn-small" style="margin-top:8px;width:100%;" onclick="abrirModalVehiculo('${ch.id}')">✏️ Cambiar</button>
+    </div>
+  `).join('');
+}
+
+// Cerrar modal al hacer click fuera
+document.getElementById('modal-vehiculo').addEventListener('click', function(e){
+  if (e.target === this) cerrarModalVehiculo();
+});
 
 async function confirmarNuevoChofer() {
   const id = normalizeChoferId(document.getElementById('nuevo-chofer-id')?.value || '');
@@ -1073,6 +1310,38 @@ async function cargarMapaChoferes() {
   initMapaChoferes();
 }
 
+const DARK_MAP_STYLE = [
+  {elementType:'geometry',stylers:[{color:'#111111'}]},
+  {elementType:'labels.icon',stylers:[{visibility:'off'}]},
+  {elementType:'labels.text.fill',stylers:[{color:'#757575'}]},
+  {elementType:'labels.text.stroke',stylers:[{color:'#212121'}]},
+  {featureType:'administrative',elementType:'geometry',stylers:[{color:'#555555'}]},
+  {featureType:'administrative.country',elementType:'labels.text.fill',stylers:[{color:'#9e9e9e'}]},
+  {featureType:'administrative.land_parcel',stylers:[{visibility:'off'}]},
+  {featureType:'administrative.locality',elementType:'labels.text.fill',stylers:[{color:'#bdbdbd'}]},
+  {featureType:'poi',elementType:'labels.text.fill',stylers:[{color:'#757575'}]},
+  {featureType:'poi.park',elementType:'geometry',stylers:[{color:'#181818'}]},
+  {featureType:'poi.park',elementType:'labels.text.fill',stylers:[{color:'#616161'}]},
+  {featureType:'poi.park',elementType:'labels.text.stroke',stylers:[{color:'#1b1b1b'}]},
+  {featureType:'road',elementType:'geometry.fill',stylers:[{color:'#2c2c2c'}]},
+  {featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#8a8a8a'}]},
+  {featureType:'road.arterial',elementType:'geometry',stylers:[{color:'#373737'}]},
+  {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#3c3c3c'}]},
+  {featureType:'road.highway.controlled_access',elementType:'geometry',stylers:[{color:'#4e4e4e'}]},
+  {featureType:'road.local',elementType:'labels.text.fill',stylers:[{color:'#616161'}]},
+  {featureType:'transit',elementType:'labels.text.fill',stylers:[{color:'#757575'}]},
+  {featureType:'water',elementType:'geometry',stylers:[{color:'#000000'}]},
+  {featureType:'water',elementType:'labels.text.fill',stylers:[{color:'#3d3d3d'}]}
+];
+
+function scheduleActualizarMapa() {
+  if (mapaDebounceTimer) clearTimeout(mapaDebounceTimer);
+  mapaDebounceTimer = setTimeout(() => {
+    mapaDebounceTimer = null;
+    actualizarMapaChoferes();
+  }, 400);
+}
+
 function initMapaChoferes() {
   if (mapChoferes || !(window.google && google.maps)) return;
   mapChoferes = new google.maps.Map(document.getElementById('map-choferes'), {
@@ -1080,7 +1349,8 @@ function initMapaChoferes() {
     zoom: 11,
     mapTypeControl: false,
     streetViewControl: false,
-    fullscreenControl: true
+    fullscreenControl: true,
+    styles: DARK_MAP_STYLE
   });
   directionsServiceChoferes = new google.maps.DirectionsService();
 }
@@ -1132,7 +1402,7 @@ function obtenerPosicionCliente(reservaId, reserva) {
         };
         geocoderCache[cacheKey] = pos;
         resolve(pos);
-        setTimeout(() => actualizarMapaChoferes(), 0);
+        scheduleActualizarMapa();
         return;
       }
       resolve(null);
@@ -1200,7 +1470,6 @@ function obtenerPathRutaReal(origen, destino) {
       origin: origen,
       destination: destino,
       travelMode: google.maps.TravelMode.DRIVING,
-      drivingOptions: { departureTime: new Date(), trafficModel: 'bestguess' },
       unitSystem: google.maps.UnitSystem.METRIC
     }, (result, status) => {
       rutaClienteChoferPendiente.delete(cacheKey);
@@ -1213,6 +1482,16 @@ function obtenerPathRutaReal(origen, destino) {
       resolve([origen, destino]);
     });
   });
+}
+
+let mapaFiltroVehiculo = 'todos';
+function filtrarMapa(tipo) {
+  mapaFiltroVehiculo = tipo;
+  ['todos','carro','camioneta'].forEach(f => {
+    const btn = document.getElementById('mapa-tab-' + f);
+    if (btn) btn.style.background = f === tipo ? 'rgba(212,175,55,0.35)' : '';
+  });
+  actualizarMapaChoferes();
 }
 
 async function actualizarMapaChoferes() {
@@ -1228,7 +1507,8 @@ async function actualizarMapaChoferes() {
     const lat = Number(ch.ubicacion?.lat);
     const lng = Number(ch.ubicacion?.lng);
     const online = /en linea|ocupado|libre/i.test((ch.estado || '').toLowerCase());
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !online) {
+    const pasaFiltro = mapaFiltroVehiculo === 'todos' || ch.vehiculo_tipo === mapaFiltroVehiculo;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !online || !pasaFiltro) {
       return;
     }
 
@@ -1236,6 +1516,8 @@ async function actualizarMapaChoferes() {
     const title = `Chofer ${ch.id} · ${ch.nombre}`;
     const color = String(ch.estado || '').toLowerCase().includes('ocupado') ? '#F59E0B' : '#22C55E';
     const icon = crearIconoChofer(color);
+    const vehiculoEmoji = ch.vehiculo_tipo === 'camioneta' ? '🚙' : ch.vehiculo_tipo === 'carro' ? '🚗' : '🔹';
+    const labelText = `${vehiculoEmoji} ${ch.nombre}`;
 
     if (!choferMapMarkers[ch.id]) {
       choferMapMarkers[ch.id] = new google.maps.Marker({
@@ -1244,7 +1526,7 @@ async function actualizarMapaChoferes() {
         title,
         icon,
         label: {
-          text: `${ch.id} · ${ch.nombre}`,
+          text: labelText,
           color: '#f8fafc',
           fontSize: '11px',
           fontWeight: '700'
@@ -1255,7 +1537,7 @@ async function actualizarMapaChoferes() {
       choferMapMarkers[ch.id].setTitle(title);
       choferMapMarkers[ch.id].setIcon(icon);
       choferMapMarkers[ch.id].setLabel({
-        text: `${ch.id} · ${ch.nombre}`,
+        text: labelText,
         color: '#f8fafc',
         fontSize: '11px',
         fontWeight: '700'
@@ -1462,9 +1744,14 @@ function renderizarChoferes() {
   const div = document.getElementById('lista-choferes');
   div.innerHTML = '';
 
+  const q = (document.getElementById('buscador-choferes')?.value || '').trim().toLowerCase();
+
   const filtrados = choferesLista.filter(ch => {
-    if (filtroHotelActivo === 'TODOS') return true;
-    return (ch.hotel || 'Sin asignar') === filtroHotelActivo;
+    if (filtroHotelActivo !== 'TODOS' && (ch.hotel || 'Sin asignar') !== filtroHotelActivo) return false;
+    if (!q) return true;
+    return ch.nombre.toLowerCase().includes(q)
+        || ch.id.toLowerCase().includes(q)
+        || (ch.vehiculo_tipo || '').toLowerCase().includes(q);
   });
 
   filtrados.forEach(ch => {
@@ -1478,7 +1765,7 @@ function renderizarChoferes() {
 
     div.innerHTML += `
       <div class="chofer-card">
-        <div class="chofer-avatar">🚗</div>
+        <div class="chofer-avatar">${ch.vehiculo_tipo === 'camioneta' ? '🚙' : '🚗'}</div>
         <div class="chofer-info">
           <div class="chofer-nombre">${escHtml(ch.nombre)}</div>
           <div class="chofer-id">ID: ${escHtml(ch.id)}</div>
@@ -1486,11 +1773,13 @@ function renderizarChoferes() {
             <span class="dot ${dotClass}"></span>${estadoLabel}
           </div>
           <div class="chofer-hotel">🏨 Hotel: <b>${escHtml(ch.hotel || 'Sin asignar')}</b></div>
+          ${ch.vehiculo_tipo ? `<div class="chofer-vehiculo">${ch.vehiculo_tipo === 'camioneta' ? '🚙 Camioneta' : '🚗 Carro'}</div>` : '<div class="chofer-vehiculo" style="color:#666;">Sin vehículo asignado</div>'}
           ${ch.viajeActual ? `<div class="viaje-actual">🗺️ ${escHtml(ch.viajeActual)}</div>` : ''}
           <div class="chofer-actions">
             <button class="btn-small" onclick="editarNombreChofer('${ch.id}')">✏️ Editar nombre</button>
-            <button class="btn-small" onclick="asignarHotel('${ch.id}')">🏨 Asignar hotel</button>
-            <button class="btn-small" onclick="borrarChoferIndividual('${ch.id}')">🗑️ Borrar chofer</button>
+            <button class="btn-small" onclick="asignarHotel('${ch.id}')">🏨 Hotel</button>
+            <button class="btn-small" onclick="abrirModalVehiculo('${ch.id}')">🚗 Vehículo</button>
+            <button class="btn-small" onclick="borrarChoferIndividual('${ch.id}')">🗑️ Borrar</button>
           </div>
         </div>
       </div>`;
@@ -1537,25 +1826,79 @@ function aplicarFiltroHotel(valor) {
 // ─────────────────────────────────────────────────────────────
 //  POBLAR SELECT DE UN CHOFER
 // ─────────────────────────────────────────────────────────────
+function csdRender(reservaId, q) {
+  const lista = document.getElementById('sd-' + reservaId);
+  if (!lista) return;
+  const filtro = (q || '').trim().toLowerCase();
+  const items = filtro
+    ? Object.entries(choferesDisponibles).filter(([id, ch]) =>
+        ch.nombre.toLowerCase().includes(filtro) ||
+        id.toLowerCase().includes(filtro) ||
+        (ch.vehiculo_tipo || '').toLowerCase().includes(filtro))
+    : Object.entries(choferesDisponibles);
+
+  if (!items.length) {
+    lista.innerHTML = '<div class="csd-item">Sin resultados</div>';
+    lista.classList.add('open');
+    return;
+  }
+  const selVal = document.getElementById('sel-' + reservaId)?.value || '';
+  lista.innerHTML = items.map(([id, ch]) => {
+    const emoji = ch.vehiculo_tipo === 'camioneta' ? '🚙' : ch.vehiculo_tipo === 'carro' ? '🚗' : '❓';
+    const vLabel = ch.vehiculo_tipo === 'camioneta' ? 'Camioneta' : ch.vehiculo_tipo === 'carro' ? 'Carro' : 'Sin vehículo';
+    const activo = id === selVal ? ' sel' : '';
+    return `<div class="csd-item${activo}" onclick="csdSeleccionar('${reservaId}','${id}','${escHtml(ch.nombre)}')">` +
+      `<span>${emoji}</span><span style="flex:1">${escHtml(ch.nombre)}</span>` +
+      `<span style="font-size:.72rem;color:var(--muted);">${vLabel}</span></div>`;
+  }).join('');
+  lista.classList.add('open');
+}
+
+function csdAbrir(reservaId) { csdRender(reservaId, document.getElementById('si-' + reservaId)?.value); }
+function csdFiltrar(reservaId, q) { csdRender(reservaId, q); }
+function csdSeleccionar(reservaId, id, nombre) {
+  const hidden = document.getElementById('sel-' + reservaId);
+  const input  = document.getElementById('si-'  + reservaId);
+  const lista  = document.getElementById('sd-'  + reservaId);
+  if (hidden) hidden.value = id;
+  if (input)  input.value  = nombre + ' (' + id + ')';
+  if (lista)  lista.classList.remove('open');
+}
+
+// Cerrar dropdowns al hacer click fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('.csd-wrap')) {
+    document.querySelectorAll('.csd-list.open').forEach(l => l.classList.remove('open'));
+  }
+});
+
 function poblarSelect(sel) {
-  const valorActual = sel.value;
-  sel.innerHTML = '<option value="">— Seleccionar chofer —</option>';
-  Object.entries(choferesDisponibles).forEach(([id, ch]) => {
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = `${ch.nombre} (${ch.estado})`;
-    if (id === valorActual) opt.selected = true;
-    sel.appendChild(opt);
-  });
-  // Si no hay choferes en Firebase, añadir IDs por defecto
-  if (Object.keys(choferesDisponibles).length === 0) {
-    ['001','002','003'].forEach(id => {
+  // Compatibilidad: si el elemento es un <select> real, usarlo normalmente
+  if (sel.tagName === 'SELECT') {
+    const valorActual = sel.value;
+    sel.innerHTML = '<option value="">— Seleccionar chofer —</option>';
+    Object.entries(choferesDisponibles).forEach(([id, ch]) => {
       const opt = document.createElement('option');
       opt.value = id;
-      opt.textContent = `Chofer ${id}`;
+      const vehiculoEmoji = ch.vehiculo_tipo === 'camioneta' ? '🚙' : ch.vehiculo_tipo === 'carro' ? '🚗' : '❓';
+      const vehiculoLabel = ch.vehiculo_tipo === 'camioneta' ? 'Camioneta' : ch.vehiculo_tipo === 'carro' ? 'Carro' : 'Sin vehículo';
+      opt.textContent = `${vehiculoEmoji} ${ch.nombre} · ${vehiculoLabel} (${ch.estado})`;
+      if (id === valorActual) opt.selected = true;
       sel.appendChild(opt);
     });
+    if (Object.keys(choferesDisponibles).length === 0) {
+      ['001','002','003'].forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = `Chofer ${id}`;
+        sel.appendChild(opt);
+      });
+    }
+    return;
   }
+  // Si es hidden input (nuevo sistema csd), re-renderizar su lista
+  const reservaId = sel.id.replace(/^sel-/, '');
+  csdRender(reservaId, '');
 }
 
 async function enviarPushNuevoViajeChofer({ choferID, choferData, reservaID, datosViaje }) {
@@ -1904,7 +2247,13 @@ setInterval(() => {
       choferesLista = Object.entries(choferesDisponibles).map(([id, ch]) => ({
         id, nombre: ch.nombre || id, estado: ch.estado || 'Desconectado',
         hotel: ch.hotel || '', ubicacion: ch.ubicacion || null,
-        viajeActual: ch.viajeActual || null
+        viajeActual: ch.viajeActual || null,
+        vehiculo_tipo:   ch.vehiculo_tipo   || '',
+        vehiculo_marca:  ch.vehiculo_marca  || '',
+        vehiculo_modelo: ch.vehiculo_modelo || '',
+        vehiculo_color:  ch.vehiculo_color  || '',
+        vehiculo_anio:   ch.vehiculo_anio   || '',
+        placa:           ch.placa           || ''
       }));
       renderizarChoferes();
       actualizarMapaChoferes();
