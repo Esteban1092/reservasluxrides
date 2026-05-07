@@ -282,8 +282,8 @@
   <div class="login-card">
     <h2>🛰️ ANDMIN</h2>
     <p>Despacho LuxRides</p>
-    <input id="login-id" type="text" placeholder="ID de administrador" autocomplete="off"/>
-    <input id="login-pass" type="password" placeholder="Contraseña"/>
+    <p style="color:var(--muted);font-size:.78rem;margin-bottom:6px;">estebanjesusgonzalezflores@gmail.com</p>
+    <input id="login-pass" type="password" placeholder="Contraseña Firebase" autocomplete="current-password"/>
     <button onclick="intentarLogin()">INGRESAR</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -438,31 +438,41 @@
 
 <script>
 // ─────────────────────────────────────────────────────────────
-//  LOGIN
+//  LOGIN — Firebase Auth email/password
 // ─────────────────────────────────────────────────────────────
-const ADMIN_ID = 'admin12343';
-const ADMIN_PASS = '12052010';
-const ADMIN_SESSION_KEY = 'luxrides_admin_session';
+const ADMIN_EMAIL = 'estebanjesusgonzalezflores@gmail.com';
 
-function intentarLogin(){
-  const id = (document.getElementById('login-id').value || '').trim();
+// Promesa que se resuelve cuando el SDK de auth ya está disponible
+let _authReadyResolve;
+const authSDKReady = new Promise(r => { _authReadyResolve = r; });
+
+async function intentarLogin(){
   const pass = (document.getElementById('login-pass').value || '').trim();
   const errorEl = document.getElementById('login-error');
+  const btn = document.querySelector('#login-screen button');
 
-  if(!id || !pass){
-    errorEl.textContent = '⚠️ Ingresa ID y contraseña';
+  if(!pass){
+    errorEl.textContent = '⚠️ Ingresa tu contraseña';
     errorEl.style.display = 'block';
     return;
   }
-  if(id !== ADMIN_ID || pass !== ADMIN_PASS){
-    errorEl.textContent = '❌ Credenciales incorrectas';
+  try {
+    errorEl.style.display = 'none';
+    btn.textContent = 'Ingresando…';
+    btn.disabled = true;
+    await authSDKReady;
+    await firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, pass);
+    // onAuthStateChanged (en initFirebase) maneja el resto
+  } catch(err) {
+    console.warn('Auth error:', err.code);
+    const msg = (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential')
+      ? '❌ Contraseña incorrecta'
+      : '❌ Error: ' + (err.message || err.code);
+    errorEl.textContent = msg;
     errorEl.style.display = 'block';
-    return;
+    btn.textContent = 'INGRESAR';
+    btn.disabled = false;
   }
-
-  errorEl.style.display = 'none';
-  sessionStorage.setItem(ADMIN_SESSION_KEY, 'ok');
-  mostrarApp();
 }
 
 function mostrarApp(){
@@ -470,22 +480,9 @@ function mostrarApp(){
   document.getElementById('app-content').style.display = 'block';
 }
 
-function verificarSesionAdmin(){
-  if(sessionStorage.getItem(ADMIN_SESSION_KEY) === 'ok'){
-    mostrarApp();
-    return true;
-  }
-  return false;
-}
-
 document.getElementById('login-pass').addEventListener('keydown', (e) => {
   if(e.key === 'Enter') intentarLogin();
 });
-document.getElementById('login-id').addEventListener('keydown', (e) => {
-  if(e.key === 'Enter') document.getElementById('login-pass').focus();
-});
-
-verificarSesionAdmin();
 </script>
 
 <script>
@@ -574,6 +571,7 @@ async function asegurarChoferCanonico(value) {
 const initFirebase = (async () => {
   try {
     await loadScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+    await loadScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
     await loadScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js");
     await loadScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
@@ -581,11 +579,27 @@ const initFirebase = (async () => {
       firebase.initializeApp(firebaseConfig);
     }
 
-    db = firebase.database();
-    setBadge('badge-fb', 'ok', 'Firebase: activo ✓');
-    inicializarFCMDespacho();
-    await cargarMapaChoferes();
-    iniciarListeners();
+    // Señalar que el SDK de auth ya está disponible (para intentarLogin)
+    _authReadyResolve();
+
+    // Escuchar estado de auth — Firebase persiste la sesión automáticamente
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (user && user.email === ADMIN_EMAIL) {
+        mostrarApp();
+        if (!db) {
+          db = firebase.database();
+          setBadge('badge-fb', 'ok', 'Firebase: activo ✓');
+          inicializarFCMDespacho();
+          await cargarMapaChoferes();
+          iniciarListeners();
+        }
+      } else if (user) {
+        // Autenticado pero no es el admin — cerrar sesión
+        await firebase.auth().signOut();
+      }
+      // Si !user: pantalla de login ya visible por defecto
+    });
+
   } catch (err) {
     console.error(err);
     setBadge('badge-fb', 'warn', 'Firebase: error ✗');
