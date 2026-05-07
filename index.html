@@ -111,9 +111,14 @@ select{padding-left:12px;padding-right:12px;}
 .btn-ampm{padding:13px 28px;border:2px solid var(--gold);background:#fff;color:var(--gold);font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:700;cursor:pointer;border-radius:8px;box-shadow:0 2px 8px rgba(212,175,55,0.08);transition:all .2s;}
 .btn-ampm:last-child{border-left:none;}
 .btn-ampm.active{background:var(--gold);border-color:var(--gold);color:#050505;font-weight:700;}
-#btn-calc{width:100%;padding:14px;margin-top:20px;background:var(--gold);border:none;color:#050505;font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s;}
+#btn-calc{width:100%;padding:14px;margin-top:8px;background:var(--gold);border:none;color:#050505;font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s;}
 #btn-calc:hover{background:var(--gold-hover);}
 #btn-calc:disabled{opacity:0.5;cursor:not-allowed;}
+/* mini aviso T&C en panel */
+#tyc-mini{display:flex;align-items:flex-start;gap:9px;margin-top:18px;padding:11px 13px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.35);border-radius:10px;cursor:pointer;}
+#tyc-mini input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold);flex-shrink:0;margin-top:1px;cursor:pointer;}
+#tyc-mini label{font-size:.78rem;color:var(--muted);line-height:1.45;cursor:pointer;}
+#tyc-mini a{color:var(--gold);text-decoration:underline;white-space:nowrap;}
 .spin{width:18px;height:18px;border:2px solid rgba(5,5,5,0.3);border-top-color:#050505;border-radius:50%;animation:spin .7s linear infinite;display:none;}
 @keyframes spin{to{transform:rotate(360deg);}}
 #results{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);display:none;}
@@ -210,9 +215,140 @@ select{padding-left:12px;padding-right:12px;}
   .btn-toggle,.btn-hour,.btn-pax{font-size:0.92rem;padding-top:12px;padding-bottom:12px;}
   #btn-calc,#btn-wa{padding-top:15px;padding-bottom:15px;}
 }
+
+/* ── TÉRMINOS Y CONDICIONES OVERLAY ── */
+#tyc-overlay{
+  position:fixed;inset:0;z-index:99999;
+  background:rgba(10,10,10,0.97);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  font-family:'Outfit',sans-serif;
+}
+#tyc-overlay.hidden{display:none;}
+#tyc-card{
+  background:#141414;
+  border:1.5px solid #D4AF37;
+  border-radius:18px;
+  max-width:420px;width:100%;
+  max-height:80vh;
+  display:flex;flex-direction:column;
+  box-shadow:0 24px 64px rgba(0,0,0,0.7);
+  overflow:hidden;
+}
+#tyc-header{
+  padding:22px 24px 16px;
+  border-bottom:1px solid rgba(212,175,55,0.3);
+  flex-shrink:0;
+}
+#tyc-header h2{
+  font-family:'Playfair Display',serif;
+  color:#D4AF37;font-size:1.25rem;font-weight:700;
+  letter-spacing:.12em;text-align:center;
+}
+#tyc-header p{
+  color:rgba(255,255,255,0.45);font-size:.72rem;
+  text-align:center;margin-top:4px;letter-spacing:.2em;text-transform:uppercase;
+}
+#tyc-body{
+  overflow-y:auto;padding:20px 24px;flex:1;
+  scrollbar-width:thin;scrollbar-color:rgba(212,175,55,.4) transparent;
+}
+#tyc-body::-webkit-scrollbar{width:4px;}
+#tyc-body::-webkit-scrollbar-thumb{background:rgba(212,175,55,.4);border-radius:4px;}
+#tyc-body h3{
+  color:#D4AF37;font-size:.8rem;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;
+  margin:18px 0 6px;
+}
+#tyc-body h3:first-child{margin-top:0;}
+#tyc-body p, #tyc-body li{
+  color:rgba(255,255,255,.72);font-size:.84rem;line-height:1.6;
+}
+#tyc-body ul{padding-left:18px;margin-top:4px;}
+#tyc-body li{margin-bottom:3px;}
+#tyc-footer{
+  padding:16px 24px 20px;
+  border-top:1px solid rgba(212,175,55,0.2);
+  flex-shrink:0;
+  display:flex;flex-direction:column;gap:10px;
+}
+#tyc-checkbox-row{
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+}
+#tyc-checkbox-row input[type=checkbox]{
+  width:18px;height:18px;accent-color:#D4AF37;cursor:pointer;flex-shrink:0;
+}
+#tyc-checkbox-row label{
+  color:rgba(255,255,255,.8);font-size:.83rem;line-height:1.4;cursor:pointer;
+}
+#btn-tyc-aceptar{
+  width:100%;padding:13px;
+  background:#D4AF37;color:#050505;
+  border:none;border-radius:10px;
+  font-weight:700;font-size:.95rem;
+  font-family:'Outfit',sans-serif;
+  cursor:pointer;
+  transition:background .2s, opacity .2s;
+  letter-spacing:.06em;
+}
+#btn-tyc-aceptar:disabled{opacity:.4;cursor:not-allowed;background:#888;}
+#btn-tyc-aceptar:not(:disabled):hover{background:#F3E5AB;}
 </style>
 </head>
 <body>
+
+<!-- ── TÉRMINOS Y CONDICIONES ──────────────────────────────── -->
+<div id="tyc-overlay">
+  <div id="tyc-card">
+    <div id="tyc-header">
+      <h2>LUXRIDES</h2>
+      <p>Términos y Condiciones de Uso</p>
+    </div>
+    <div id="tyc-body">
+      <h3>1. Objeto</h3>
+      <p>luxridesreservas.com es un sistema digital que facilita la conexión entre usuarios que solicitan transporte ejecutivo y conductores independientes. No presta directamente el servicio de transporte.</p>
+
+      <h3>2. Naturaleza del Servicio</h3>
+      <p>Los conductores son profesionales independientes que operan bajo su propio riesgo. luxridesreservas.com actúa exclusivamente como intermediario tecnológico.</p>
+
+      <h3>3. Ausencia de Relación Laboral</h3>
+      <p>El uso del sistema no crea relación laboral entre conductores y luxridesreservas.com, conductores y hoteles, ni conductores y usuarios. No existe subordinación ni dependencia económica.</p>
+
+      <h3>4. Responsabilidad del Conductor</h3>
+      <p>Cada conductor es responsable de:</p>
+      <ul>
+        <li>Seguro vigente</li>
+        <li>Licencias y permisos</li>
+        <li>Estado del vehículo</li>
+        <li>Cumplimiento legal</li>
+      </ul>
+
+      <h3>5. Responsabilidad del Usuario</h3>
+      <p>El usuario acepta que el servicio es prestado por un tercero independiente, que cualquier reclamación directa deberá realizarse al conductor, y que luxridesreservas.com actúa únicamente como medio de enlace.</p>
+
+      <h3>6. Limitación de Responsabilidad</h3>
+      <p>luxridesreservas.com no será responsable por accidentes, daños materiales, lesiones, pérdidas o incumplimiento del conductor, salvo dolo comprobado.</p>
+
+      <h3>7. Comisiones</h3>
+      <p>Se retendrá un porcentaje por gestión tecnológica.</p>
+
+      <h3>8. Modificaciones</h3>
+      <p>luxridesreservas.com puede modificar estos términos en cualquier momento.</p>
+
+      <h3>9. Ley Aplicable</h3>
+      <p>Estos términos se rigen por las leyes civiles y mercantiles de México.</p>
+    </div>
+    <div id="tyc-footer">
+      <label id="tyc-checkbox-row">
+        <input type="checkbox" id="tyc-check" onchange="document.getElementById('btn-tyc-aceptar').disabled = !this.checked"/>
+        <span>He leído y acepto los Términos y Condiciones de luxridesreservas.com</span>
+      </label>
+      <button id="btn-tyc-aceptar" disabled onclick="aceptarTyC()">ACEPTAR Y CONTINUAR</button>
+    </div>
+  </div>
+</div>
+<!-- ── FIN TÉRMINOS Y CONDICIONES ──────────────────────────── -->
+
 <p style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Servicio de transporte ejecutivo de lujo en CDMX. Sedán y SUV para hasta 6 pasajeros, choferes profesionales y guías certificados. Pagos 100% seguros con protección antifraude.</p>
 <div id="map"></div>
 <div id="panel">
@@ -355,7 +491,14 @@ select{padding-left:12px;padding-right:12px;}
       <div class="vehicle-hint" id="vehicle-hint">Sedán VIP Diamond</div>
     </div>
 
-    <button id="btn-calc" onclick="calcular()"><span id="btn-calc-txt">🔍 Calcular Precio y Ruta</span><span id="spin" class="spin"></span></button>
+    <div id="tyc-mini">
+      <input type="checkbox" id="tyc-mini-check" onchange="toggleBtnCalc()"/>
+      <label for="tyc-mini-check">
+        Acepto los <a href="#" onclick="event.preventDefault();abrirTyC()">Términos y Condiciones</a>
+        y el Aviso de Privacidad de luxridesreservas.com antes de continuar con mi reserva.
+      </label>
+    </div>
+    <button id="btn-calc" onclick="calcular()" disabled><span id="btn-calc-txt">🔍 Calcular Precio y Ruta</span><span id="spin" class="spin"></span></button>
 
     <div id="results">
       <div class="route-box" id="route-box">
@@ -535,6 +678,35 @@ select{padding-left:12px;padding-right:12px;}
 </div>
 
 <script>
+// ── TÉRMINOS Y CONDICIONES ────────────────────────────────────
+const TYC_KEY = 'luxrides_tyc_aceptado_v1';
+function aceptarTyC(){
+  localStorage.setItem(TYC_KEY, '1');
+  document.getElementById('tyc-overlay').classList.add('hidden');
+  // Si ya tenía el mini-check marcado, desbloqueamos calcular
+  const mc = document.getElementById('tyc-mini-check');
+  if(mc) mc.checked = true;
+  toggleBtnCalc();
+}
+function abrirTyC(){
+  document.getElementById('tyc-overlay').classList.remove('hidden');
+}
+function toggleBtnCalc(){
+  const checked = document.getElementById('tyc-mini-check')?.checked;
+  const btn = document.getElementById('btn-calc');
+  if(btn) btn.disabled = !checked;
+}
+(function verificarTyC(){
+  if(localStorage.getItem(TYC_KEY) === '1'){
+    document.getElementById('tyc-overlay').classList.add('hidden');
+    // Si ya aceptó antes, pre-marcar el checkbox y habilitar calcular
+    const mc = document.getElementById('tyc-mini-check');
+    if(mc) mc.checked = true;
+    toggleBtnCalc();
+  }
+})();
+// ──────────────────────────────────────────────────────────────
+
 // Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCUg6f_AeINCNn8VWU1GDjpjq5_e8A8GvQ",
@@ -560,12 +732,16 @@ const loadExternalScript = (src) => new Promise((resolve, reject) => {
 const firebaseInitPromise = (async () => {
   try {
     await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+    await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
     await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js");
     await loadExternalScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
     if (typeof firebase !== 'undefined' && !firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
+
+    // Auth anónima — requerida por las reglas de seguridad de la BD
+    await firebase.auth().signInAnonymously();
 
     firebaseReady = typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
     db = firebaseReady ? firebase.database() : null;
