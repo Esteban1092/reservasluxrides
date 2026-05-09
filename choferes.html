@@ -16,6 +16,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
   <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUg6f_AeINCNn8VWU1GDjpjq5_e8A8GvQ&libraries=places"></script>
 
   <style>
@@ -409,6 +410,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const FCM_VAPID_KEY = 'BHFqapvp0PyXQZTEQEKwIjDGt_KxIb2-gQ3Iu3uDNgz9fdrCH6T1ADyqvIbOSnwuoQEXs2KkB9_ZvUldqIGWpdQ';
+
+    let noSleep = new NoSleep(); // Esto crea la herramienta pero aún no la activa
 
     const MAX_LOGIN_ATTEMPTS = 2;
     // ⚠️ Reemplaza con tu clave PÚBLICA de Stripe (pk_live_...)
@@ -893,6 +896,9 @@
           return;
         }
 
+        noSleep.enable();
+        console.log("¡LuxRides no se dormirá! Modo NoSleep activado.");
+
         resetGuard();
 
         if (ch.suspendido === true) {
@@ -977,33 +983,65 @@
       });
     }
 
-    function iniciarRastreoUbicacion() {
-      if (!navigator.geolocation || locationWatchId !== null) return;
+    async function procesarPosicionGPS(lat, lng, speed, heading) {
+      try {
+        ultimaPosicion = { lat, lng };
+        if (Number.isFinite(heading)) ultimoHeading = heading;
+        await db.ref('choferes/' + choferID + '/ubicacion').update({
+          lat, lng,
+          speed: speed || 0,
+          heading: Number.isFinite(heading) ? heading : ultimoHeading,
+          updatedAt: new Date().toISOString()
+        });
+        actualizarMarcadorChofer();
+        actualizarEtaViaje();
+      } catch (err) {
+        console.warn('No se pudo actualizar ubicacion', err);
+      }
+    }
 
-      locationWatchId = navigator.geolocation.watchPosition(async pos => {
+    async function iniciarRastreoUbicacion() {
+      if (locationWatchId !== null) return;
+
+      // Usar plugin nativo de Capacitor si está disponible (APK Android)
+      const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+      if (isNative) {
         try {
-          ultimaPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          if (Number.isFinite(pos.coords.heading)) {
-            ultimoHeading = Number(pos.coords.heading);
-          }
-
-          await db.ref('choferes/' + choferID + '/ubicacion').update({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            speed: pos.coords.speed || 0,
-            heading: Number.isFinite(pos.coords.heading) ? Number(pos.coords.heading) : ultimoHeading,
-            updatedAt: new Date().toISOString()
-          });
-          actualizarMarcadorChofer();
-          actualizarEtaViaje();
-        } catch (err) {
-          console.warn('No se pudo actualizar ubicacion', err);
+          const { BackgroundGeolocation } = await import('@capacitor-community/background-geolocation');
+          await BackgroundGeolocation.addWatcher(
+            {
+              backgroundMessage: 'LuxRides está rastreando tu ubicación.',
+              backgroundTitle: 'GPS Activo',
+              requestPermissions: true,
+              stale: false,
+              distanceFilter: 10
+            },
+            async (location, error) => {
+              if (error) { console.warn('GPS nativo error', error); return; }
+              await procesarPosicionGPS(location.latitude, location.longitude, location.speed, location.bearing);
+            }
+          ).then(id => { locationWatchId = id; });
+          console.log('GPS nativo Capacitor activado (segundo plano)');
+          return;
+        } catch (e) {
+          console.warn('BackgroundGeolocation no disponible, usando web fallback', e);
         }
-      },
-      err => {
-        console.warn('Error GPS', err);
-      },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+      }
+
+      // Fallback: watchPosition web (navegador normal)
+      if (!navigator.geolocation) return;
+      locationWatchId = navigator.geolocation.watchPosition(
+        async pos => {
+          await procesarPosicionGPS(
+            pos.coords.latitude,
+            pos.coords.longitude,
+            pos.coords.speed,
+            pos.coords.heading
+          );
+        },
+        err => { console.warn('Error GPS', err); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      );
     }
 
     function forzarUbicacion() {
@@ -1840,7 +1878,15 @@
         detenerHeartbeatChofer();
         await liberarWakeLockChofer();
         if (locationWatchId !== null) {
-          navigator.geolocation.clearWatch(locationWatchId);
+          const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+          if (isNative) {
+            try {
+              const { BackgroundGeolocation } = await import('@capacitor-community/background-geolocation');
+              await BackgroundGeolocation.removeWatcher({ id: locationWatchId });
+            } catch(e) { console.warn('Error al detener GPS nativo', e); }
+          } else {
+            navigator.geolocation.clearWatch(locationWatchId);
+          }
           locationWatchId = null;
         }
 
