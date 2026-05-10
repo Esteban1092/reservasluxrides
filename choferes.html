@@ -161,6 +161,9 @@
   </div>
 
   <div id="main-screen">
+    <div id="nosleep-badge" style="display:none;background:#1a1a1a;border:1px solid #d4af37;color:#d4af37;font-size:0.72rem;text-align:center;padding:4px 8px;letter-spacing:1px;">
+      &#9679; PANTALLA ACTIVA &nbsp;|&nbsp; SEGUNDO PLANO HABILITADO
+    </div>
     <div class="header">
       <span class="title">Choferes LuxRides Pro</span>
       <div class="actions">
@@ -593,7 +596,7 @@
           ultimaConexion: new Date().toISOString(),
           app_background: document.hidden === true
         }).catch(() => {});
-      }, 45000);
+      }, 20000);
     }
 
     function detenerHeartbeatChofer() {
@@ -898,6 +901,7 @@
 
         noSleep.enable();
         console.log("¡LuxRides no se dormirá! Modo NoSleep activado.");
+        document.getElementById('nosleep-badge').style.display = 'block';
 
         resetGuard();
 
@@ -931,6 +935,16 @@
         db.ref('choferes/' + choferID).onDisconnect().update({
           estado: 'Desconectado',
           ultimaConexion: new Date().toISOString()
+        });
+
+        // Auto-reconectar: si Firebase vuelve, restaurar estado en linea
+        db.ref('.info/connected').on('value', snap => {
+          if (snap.val() === true && choferID) {
+            db.ref('choferes/' + choferID).update({
+              estado: viajeActual ? 'ocupado' : 'en linea',
+              ultimaConexion: new Date().toISOString()
+            }).catch(() => {});
+          }
         });
 
         await prepararPermisoNotificaciones();
@@ -1937,8 +1951,9 @@
       }
     });
 
-    window.addEventListener('pagehide', () => {
-      if (choferID && db) {
+    window.addEventListener('pagehide', (e) => {
+      // Solo marcar desconectado si la página realmente se está cerrando (no en mobile al cambiar de app)
+      if (choferID && db && !e.persisted) {
         db.ref('choferes/' + choferID).update({
           estado: 'Desconectado',
           ultimaConexion: new Date().toISOString()
