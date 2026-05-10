@@ -261,6 +261,13 @@ const loadScript = (src) => new Promise((resolve, reject) => {
     console.error('Firebase init error:', e);
   }
 
+  // Auto-fill código desde URL param (ej. ?code=CONC001 enviado por el simulador)
+  const urlCode = new URLSearchParams(location.search).get('code');
+  if (urlCode) {
+    const inpCode = document.getElementById('inp-code');
+    if (inpCode) inpCode.value = urlCode;
+  }
+
   // Auto-login si hay sesión guardada
   const saved = sessionStorage.getItem('luxrides_concierge_session');
   if (saved && firebaseReady) {
