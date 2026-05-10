@@ -270,7 +270,8 @@
         const c = child.val() || {};
         const estado = c.estado || 'Activo';
         const badgeClass = estado === 'Activo' ? 'activo' : 'inactivo';
-        const nfcUrl = baseUrl + 'consierges.html?c=' + encodeURIComponent(id);
+        const nfcUrl = baseUrl + 'luxrides-concierge.html?c=' + encodeURIComponent(id);
+        const panelUrl = baseUrl + 'luxrides-concierge-panel.html?code=' + encodeURIComponent(id);
 
         div.innerHTML += `
           <div class="concierge-item">
@@ -284,6 +285,8 @@
             <div class="meta">🏨 Hotel: <b>${escHtml(c.hotel || 'Sin asignar')}</b></div>
             <div class="nfc-url">🔗 NFC: ${escHtml(nfcUrl)}</div>
             <div class="item-actions">
+              <button class="btn-mini" onclick="window.open('${escJs(panelUrl)}','_blank')">📊 Abrir panel</button>
+              <button class="btn-mini" onclick="navigator.clipboard.writeText('${escJs(nfcUrl)}').then(()=>showToast('URL NFC copiada'))">📋 Copiar NFC</button>
               <button class="btn-mini" onclick="editarNombre('${escJs(id)}', '${escJs(c.nombre || '')}')">Editar nombre</button>
               <button class="btn-mini" onclick="editarHotel('${escJs(id)}', '${escJs(c.hotel || '')}')">Editar hotel</button>
               <button class="btn-mini" onclick="editarPassword('${escJs(id)}')">Cambiar contraseña</button>
