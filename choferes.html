@@ -2299,7 +2299,7 @@
       }
     }
 
-    // ===== PWA INSTALL =====
+    // --- COMIENZA CÓDIGO DE INSTALACIÓN ---
     let promptInstalacion;
     const modalInstalar = document.getElementById('modal-instalar');
     const botonInstalar = document.getElementById('btnInstalar');
@@ -2309,39 +2309,46 @@
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Evita que Chrome lance su aviso automático
+      // Bloqueamos el aviso automático de Chrome
       e.preventDefault();
+      // Guardamos el evento
       promptInstalacion = e;
-      if (botonInstalar) botonInstalar.style.display = 'block';
-      console.log('✅ LuxRides lista para instalar');
+      // Mostramos el botón (si estaba oculto)
+      if (botonInstalar) {
+        botonInstalar.style.display = 'block';
+      }
+      console.log('✅ Evento beforeinstallprompt capturado correctamente.');
     });
 
     if (botonInstalar) {
       botonInstalar.addEventListener('click', async () => {
         if (promptInstalacion) {
+          // Mostramos el cuadro de instalación oficial
           promptInstalacion.prompt();
           const { outcome } = await promptInstalacion.userChoice;
-          console.log(`Usuario eligió: ${outcome}`);
-          promptInstalacion = null;
+          console.log(`El chofer eligió: ${outcome}`);
           if (outcome === 'accepted') {
             modalInstalar.style.display = 'none';
             mostrarToastInstalado();
           }
+          // Limpiamos la variable para que no se use dos veces
+          promptInstalacion = null;
           botonInstalar.style.display = 'none';
         } else {
-          // Esto sale si el manifest o el SW fallan
-          alert('Aún no se puede instalar. Revisa que estés en HTTPS y que el manifest.json esté en la raíz.');
+          // Si llegamos aquí, el navegador aún no da permiso
+          alert('Para instalar: Toca los tres puntos arriba a la derecha y selecciona "Instalar aplicación" o "Agregar a la pantalla de inicio".');
         }
       });
     }
 
     window.addEventListener('appinstalled', () => {
-      console.log('💎 ¡LuxRides instalada con éxito!');
+      console.log('💎 ¡LuxRides instalada!');
       modalInstalar.style.display = 'none';
       promptInstalacion = null;
       if (botonInstalar) botonInstalar.style.display = 'none';
       mostrarToastInstalado();
     });
+    // --- FIN CÓDIGO DE INSTALACIÓN ---
 
     function mostrarToastInstalado() {
       const toast = document.createElement('div');
