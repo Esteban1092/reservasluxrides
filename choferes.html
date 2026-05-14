@@ -27,12 +27,13 @@
     }
   </style>
 
-  <!-- Registro temprano del Service Worker para habilitar instalación PWA -->
+  <!-- REGISTRO DEL SERVICE WORKER (EL MOTOR) -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./choferes-messaging-sw.js')
-          .catch((err) => console.warn('SW registro fallido:', err));
+        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+          .then(reg => console.log('✅ Service Worker Activo:', reg.scope))
+          .catch(err => console.error('❌ Error SW:', err));
       });
     }
   </script>
@@ -2299,7 +2300,7 @@
     }
 
     // ===== PWA INSTALL =====
-    let promptInstalacion = null;
+    let promptInstalacion;
     const modalInstalar = document.getElementById('modal-instalar');
     const botonInstalar = document.getElementById('btnInstalarModal');
     const btnSaltar = document.getElementById('btnSaltarInstalar');
@@ -2308,24 +2309,11 @@
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
     // Captura el prompt nativo (Android/Chrome) y lo guarda
-    window.addEventListener('beforeinstallprompt', async (e) => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Evita que Chrome muestre su aviso feo y usemos tu modal pro
       e.preventDefault();
       promptInstalacion = e;
-
-      // Android Chrome 76+: dispara el prompt automaticamente sin esperar clic
-      try {
-        promptInstalacion.prompt();
-        const { outcome } = await promptInstalacion.userChoice;
-        console.log(`Instalacion automatica: ${outcome}`);
-        if (outcome === 'accepted') {
-          modalInstalar.style.display = 'none';
-          promptInstalacion = null;
-        }
-        // Si rechaza, el modal sigue visible para que lo piense mejor
-      } catch (err) {
-        // Si el navegador no permite prompt() sin gesto, deja el modal
-        console.warn('Auto-prompt no soportado, usando modal:', err);
-      }
+      console.log('💎 LuxRides está lista para ser instalada');
     });
 
     // App instalada: oculta modal y muestra toast
