@@ -193,7 +193,7 @@
       <div style="font-size:4rem;margin-bottom:12px;">📲</div>
       <h2 style="color:#d4af37;font-size:1.6rem;letter-spacing:2px;margin-bottom:10px;">INSTALA LUXRIDES</h2>
       <p style="color:#ccc;font-size:0.95rem;margin-bottom:28px;line-height:1.6;">Para recibir viajes y notificaciones necesitas instalar la app en tu celular.</p>
-      <button id="btnInstalarModal" style="width:100%;padding:20px;background:#d4af37;color:#050505;border:none;border-radius:14px;font-size:1.2rem;font-weight:900;cursor:pointer;letter-spacing:0.05em;margin-bottom:12px;">
+      <button id="btnInstalar" style="width:100%;padding:20px;background:#d4af37;color:#050505;border:none;border-radius:14px;font-size:1.2rem;font-weight:900;cursor:pointer;letter-spacing:0.05em;margin-bottom:12px;">
         📥 INSTALAR AHORA
       </button>
       <button id="btnSaltarInstalar" style="width:100%;padding:12px;background:transparent;color:#666;border:1px solid #333;border-radius:10px;font-size:0.85rem;cursor:pointer;">
@@ -2302,26 +2302,45 @@
     // ===== PWA INSTALL =====
     let promptInstalacion;
     const modalInstalar = document.getElementById('modal-instalar');
-    const botonInstalar = document.getElementById('btnInstalarModal');
+    const botonInstalar = document.getElementById('btnInstalar');
     const btnSaltar = document.getElementById('btnSaltarInstalar');
     const iosTip = document.getElementById('instalar-ios-tip');
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    // Captura el prompt nativo (Android/Chrome) y lo guarda
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Evita que Chrome muestre su aviso feo y usemos tu modal pro
+      // Evita que Chrome lance su aviso automático
       e.preventDefault();
       promptInstalacion = e;
-      console.log('💎 LuxRides está lista para ser instalada');
+      if (botonInstalar) botonInstalar.style.display = 'block';
+      console.log('✅ LuxRides lista para instalar');
     });
 
-    // App instalada: oculta modal y muestra toast
+    if (botonInstalar) {
+      botonInstalar.addEventListener('click', async () => {
+        if (promptInstalacion) {
+          promptInstalacion.prompt();
+          const { outcome } = await promptInstalacion.userChoice;
+          console.log(`Usuario eligió: ${outcome}`);
+          promptInstalacion = null;
+          if (outcome === 'accepted') {
+            modalInstalar.style.display = 'none';
+            mostrarToastInstalado();
+          }
+          botonInstalar.style.display = 'none';
+        } else {
+          // Esto sale si el manifest o el SW fallan
+          alert('Aún no se puede instalar. Revisa que estés en HTTPS y que el manifest.json esté en la raíz.');
+        }
+      });
+    }
+
     window.addEventListener('appinstalled', () => {
+      console.log('💎 ¡LuxRides instalada con éxito!');
       modalInstalar.style.display = 'none';
       promptInstalacion = null;
+      if (botonInstalar) botonInstalar.style.display = 'none';
       mostrarToastInstalado();
-      console.log('LuxRides ya está instalada');
     });
 
     function mostrarToastInstalado() {
@@ -2332,37 +2351,15 @@
       setTimeout(() => toast.remove(), 5000);
     }
 
-    // Muestra el modal automáticamente al cargar
+    // Modal automático al cargar
     window.addEventListener('load', () => {
       if (isStandalone) return;
       if (sessionStorage.getItem('installSkipped')) return;
       if (isIOS) {
         iosTip.style.display = 'block';
-        botonInstalar.style.display = 'none';
+        if (botonInstalar) botonInstalar.style.display = 'none';
       }
       modalInstalar.style.display = 'flex';
-    });
-
-    // Botón instalar con async/await
-    botonInstalar.addEventListener('click', async () => {
-      if (!promptInstalacion) {
-        alert('Abre el menú del navegador y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
-        return;
-      }
-
-      // Muestra el cuadro de instalación oficial
-      promptInstalacion.prompt();
-
-      const { outcome } = await promptInstalacion.userChoice;
-      console.log(`Usuario eligió: ${outcome}`);
-
-      if (outcome === 'accepted') {
-        modalInstalar.style.display = 'none';
-        mostrarToastInstalado();
-      }
-
-      // Limpia el prompt
-      promptInstalacion = null;
     });
 
     btnSaltar.addEventListener('click', () => {
