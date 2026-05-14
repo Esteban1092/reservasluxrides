@@ -157,10 +157,24 @@
       <input type="text" id="nombre-input" placeholder="Tu nombre"/>
       <button onclick="validarIngreso()">ENTRAR A TURNO</button>
       <div id="error-msg" class="error-msg"></div>
+    </div>
+  </div>
 
-      <button id="btnInstalar" style="display:block;background:#d4af37;color:#050505;padding:16px;border-radius:12px;border:none;font-weight:900;width:100%;margin-top:14px;font-size:1.05rem;letter-spacing:0.05em;cursor:pointer;">
-        📥 INSTALAR APP LUXRIDES
+  <!-- ===== MODAL INSTALACION PWA ===== -->
+  <div id="modal-instalar" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center;">
+    <div style="max-width:360px;width:100%;">
+      <div style="font-size:4rem;margin-bottom:12px;">📲</div>
+      <h2 style="color:#d4af37;font-size:1.6rem;letter-spacing:2px;margin-bottom:10px;">INSTALA LUXRIDES</h2>
+      <p style="color:#ccc;font-size:0.95rem;margin-bottom:28px;line-height:1.6;">Para recibir viajes y notificaciones necesitas instalar la app en tu celular.</p>
+      <button id="btnInstalarModal" style="width:100%;padding:20px;background:#d4af37;color:#050505;border:none;border-radius:14px;font-size:1.2rem;font-weight:900;cursor:pointer;letter-spacing:0.05em;margin-bottom:12px;">
+        📥 INSTALAR AHORA
       </button>
+      <button id="btnSaltarInstalar" style="width:100%;padding:12px;background:transparent;color:#666;border:1px solid #333;border-radius:10px;font-size:0.85rem;cursor:pointer;">
+        Ahora no
+      </button>
+      <p id="instalar-ios-tip" style="display:none;color:#aaa;font-size:0.82rem;margin-top:18px;line-height:1.7;background:#111;padding:14px;border-radius:10px;border:1px solid #333;">
+        En iPhone: toca el botón <b style="color:#d4af37;">Compartir (□↑)</b> y luego<br><b style="color:#d4af37;">"Agregar a pantalla de inicio"</b>
+      </p>
     </div>
   </div>
 
@@ -2258,50 +2272,65 @@
       }
     }
 
-    // ===== PWA INSTALL BUTTON =====
+    // ===== PWA INSTALL AUTO-MODAL =====
     let deferredPrompt = null;
-    const btnInstalar = document.getElementById('btnInstalar');
+    const modalInstalar = document.getElementById('modal-instalar');
+    const btnInstalarModal = document.getElementById('btnInstalarModal');
+    const btnSaltar = document.getElementById('btnSaltarInstalar');
+    const iosTip = document.getElementById('instalar-ios-tip');
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    // Captura el prompt nativo de Android/Chrome
+    // Captura el prompt nativo (Android/Chrome)
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
     });
 
-    // Oculta el botón si ya está instalada como PWA
+    // Oculta el modal y muestra nota de éxito al instalar
     window.addEventListener('appinstalled', () => {
-      btnInstalar.style.display = 'none';
+      modalInstalar.style.display = 'none';
       deferredPrompt = null;
+      mostrarToastInstalado();
     });
 
-    btnInstalar.addEventListener('click', () => {
-      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    function mostrarToastInstalado() {
+      const toast = document.createElement('div');
+      toast.innerText = '✅ ¡LuxRides instalada! Ya puedes abrirla desde tu pantalla de inicio.';
+      toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:99999;background:#22c55e;color:#050505;padding:14px 22px;border-radius:12px;font-weight:800;font-size:0.95rem;text-align:center;max-width:320px;width:90%;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
 
-      if (isStandalone) {
-        alert('✅ LuxRides ya está instalada en tu dispositivo.');
-        return;
+    // Muestra el modal automáticamente al cargar (si no está instalada)
+    window.addEventListener('load', () => {
+      if (isStandalone) return; // Ya está instalada, no molestes
+      if (sessionStorage.getItem('installSkipped')) return; // El chofer dijo "ahora no" esta sesión
+      if (isIOS) {
+        iosTip.style.display = 'block';
+        btnInstalarModal.style.display = 'none';
       }
+      modalInstalar.style.display = 'flex';
+    });
 
+    btnInstalarModal.addEventListener('click', () => {
       if (deferredPrompt) {
-        // Android / Chrome — muestra el prompt nativo
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('El chofer instaló LuxRides');
-            btnInstalar.style.display = 'none';
-          } else {
-            console.log('El chofer mandó a volar la instalación');
+        deferredPrompt.userChoice.then((result) => {
+          if (result.outcome === 'accepted') {
+            modalInstalar.style.display = 'none';
+            mostrarToastInstalado();
           }
           deferredPrompt = null;
         });
-      } else if (isIOS) {
-        // iOS Safari — instrucciones manuales
-        alert('Para instalar en iPhone:\n1. Toca el botón compartir (□↑)\n2. Selecciona "Agregar a pantalla de inicio"');
       } else {
-        // Otro navegador sin soporte de prompt
-        alert('Para instalar: abre el menú del navegador y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
+        alert('Abre el menú del navegador y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
       }
+    });
+
+    btnSaltar.addEventListener('click', () => {
+      sessionStorage.setItem('installSkipped', '1');
+      modalInstalar.style.display = 'none';
     });
   </script>
 </body>
