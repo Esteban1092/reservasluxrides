@@ -5,11 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Choferes LuxRides</title>
   <meta name="theme-color" content="#d4af37"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <!-- Android PWA -->
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="LuxChofer"/>
   <link rel="manifest" href="/manifest.json"/>
-  <link rel="apple-touch-icon" href="./luxrides-driver-icon.svg"/>
+
+  <!-- iOS: iconos para todos los dispositivos Apple -->
+  <link rel="apple-touch-icon" href="/logo-luxrides.png"/>
+  <link rel="apple-touch-icon" sizes="120x120" href="/logo-luxrides.png"/>
+  <link rel="apple-touch-icon" sizes="152x152" href="/logo-luxrides.png"/>
+  <link rel="apple-touch-icon" sizes="167x167" href="/logo-luxrides.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo-luxrides.png"/>
+
+  <!-- iOS: splash screen dorado al abrir la app -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <style>
+    @media (display-mode: standalone) {
+      body { padding-top: env(safe-area-inset-top); }
+    }
+  </style>
+
+  <!-- Registro temprano del Service Worker para habilitar instalación PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./choferes-messaging-sw.js')
+          .catch((err) => console.warn('SW registro fallido:', err));
+      });
+    }
+  </script>
 
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
