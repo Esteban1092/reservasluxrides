@@ -2298,26 +2298,42 @@
       }
     }
 
-    // ===== PWA INSTALL AUTO-MODAL =====
-    let deferredPrompt = null;
+    // ===== PWA INSTALL =====
+    let promptInstalacion = null;
     const modalInstalar = document.getElementById('modal-instalar');
-    const btnInstalarModal = document.getElementById('btnInstalarModal');
+    const botonInstalar = document.getElementById('btnInstalarModal');
     const btnSaltar = document.getElementById('btnSaltarInstalar');
     const iosTip = document.getElementById('instalar-ios-tip');
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    // Captura el prompt nativo (Android/Chrome)
-    window.addEventListener('beforeinstallprompt', (e) => {
+    // Captura el prompt nativo (Android/Chrome) y lo guarda
+    window.addEventListener('beforeinstallprompt', async (e) => {
       e.preventDefault();
-      deferredPrompt = e;
+      promptInstalacion = e;
+
+      // Android Chrome 76+: dispara el prompt automaticamente sin esperar clic
+      try {
+        promptInstalacion.prompt();
+        const { outcome } = await promptInstalacion.userChoice;
+        console.log(`Instalacion automatica: ${outcome}`);
+        if (outcome === 'accepted') {
+          modalInstalar.style.display = 'none';
+          promptInstalacion = null;
+        }
+        // Si rechaza, el modal sigue visible para que lo piense mejor
+      } catch (err) {
+        // Si el navegador no permite prompt() sin gesto, deja el modal
+        console.warn('Auto-prompt no soportado, usando modal:', err);
+      }
     });
 
-    // Oculta el modal y muestra nota de éxito al instalar
+    // App instalada: oculta modal y muestra toast
     window.addEventListener('appinstalled', () => {
       modalInstalar.style.display = 'none';
-      deferredPrompt = null;
+      promptInstalacion = null;
       mostrarToastInstalado();
+      console.log('LuxRides ya está instalada');
     });
 
     function mostrarToastInstalado() {
@@ -2328,30 +2344,37 @@
       setTimeout(() => toast.remove(), 5000);
     }
 
-    // Muestra el modal automáticamente al cargar (si no está instalada)
+    // Muestra el modal automáticamente al cargar
     window.addEventListener('load', () => {
-      if (isStandalone) return; // Ya está instalada, no molestes
-      if (sessionStorage.getItem('installSkipped')) return; // El chofer dijo "ahora no" esta sesión
+      if (isStandalone) return;
+      if (sessionStorage.getItem('installSkipped')) return;
       if (isIOS) {
         iosTip.style.display = 'block';
-        btnInstalarModal.style.display = 'none';
+        botonInstalar.style.display = 'none';
       }
       modalInstalar.style.display = 'flex';
     });
 
-    btnInstalarModal.addEventListener('click', () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((result) => {
-          if (result.outcome === 'accepted') {
-            modalInstalar.style.display = 'none';
-            mostrarToastInstalado();
-          }
-          deferredPrompt = null;
-        });
-      } else {
+    // Botón instalar con async/await
+    botonInstalar.addEventListener('click', async () => {
+      if (!promptInstalacion) {
         alert('Abre el menú del navegador y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
+        return;
       }
+
+      // Muestra el cuadro de instalación oficial
+      promptInstalacion.prompt();
+
+      const { outcome } = await promptInstalacion.userChoice;
+      console.log(`Usuario eligió: ${outcome}`);
+
+      if (outcome === 'accepted') {
+        modalInstalar.style.display = 'none';
+        mostrarToastInstalado();
+      }
+
+      // Limpia el prompt
+      promptInstalacion = null;
     });
 
     btnSaltar.addEventListener('click', () => {
