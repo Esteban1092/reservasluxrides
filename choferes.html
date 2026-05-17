@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="google-site-verification" content="jhxT4adYsPzurFYOR2ZEK7aHniMiUQITRL5qLwETZko" />
   <title>Choferes LuxRides</title>
   <meta name="theme-color" content="#d4af37"/>
   <!-- Android PWA -->
@@ -2300,43 +2301,40 @@
     }
 
     // --- COMIENZA CÓDIGO DE INSTALACIÓN ---
+
+    // 1. Declarar la variable UNA SOLA VEZ al principio
     let promptInstalacion;
     const modalInstalar = document.getElementById('modal-instalar');
-    const botonInstalar = document.getElementById('btnInstalar');
     const btnSaltar = document.getElementById('btnSaltarInstalar');
     const iosTip = document.getElementById('instalar-ios-tip');
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
+    // 2. Capturar el evento (esto es lo que hace que el botón "tenga poder")
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Bloqueamos el aviso automático de Chrome
       e.preventDefault();
-      // Guardamos el evento
       promptInstalacion = e;
-      // Mostramos el botón (si estaba oculto)
-      if (botonInstalar) {
-        botonInstalar.style.display = 'block';
-      }
-      console.log('✅ Evento beforeinstallprompt capturado correctamente.');
+      console.log('✅ El instalador está listo');
     });
 
+    // 3. Configurar el click del botón
+    const botonInstalar = document.getElementById('btnInstalar');
     if (botonInstalar) {
       botonInstalar.addEventListener('click', async () => {
         if (promptInstalacion) {
-          // Mostramos el cuadro de instalación oficial
+          // Si el navegador ya nos dio el permiso, mostramos el cuadro real
           promptInstalacion.prompt();
           const { outcome } = await promptInstalacion.userChoice;
-          console.log(`El chofer eligió: ${outcome}`);
+          console.log(`El usuario eligió: ${outcome}`);
+          promptInstalacion = null;
           if (outcome === 'accepted') {
             modalInstalar.style.display = 'none';
             mostrarToastInstalado();
           }
-          // Limpiamos la variable para que no se use dos veces
-          promptInstalacion = null;
           botonInstalar.style.display = 'none';
         } else {
-          // Si llegamos aquí, el navegador aún no da permiso
-          alert('Para instalar: Toca los tres puntos arriba a la derecha y selecciona "Instalar aplicación" o "Agregar a la pantalla de inicio".');
+          // Si por algo falla el evento, mostramos el consejo
+          alert('Toca los tres puntos arriba a la derecha y selecciona "Instalar aplicación".');
         }
       });
     }
